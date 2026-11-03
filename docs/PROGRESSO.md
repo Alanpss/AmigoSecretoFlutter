@@ -244,7 +244,7 @@ Os testes cobrem criação de evento/participante/grupo, migração 1→2, trans
 
 **Escopo implementado nesta continuação:** algoritmo puro Hopcroft–Karp e amostragem uniforme por caminhos alternados; diagnóstico sem relaxamento automático; migração do schema 2 para 3; persistência transacional de draw, assignments e deliveries; snapshots do dono, sorteado, destinatário, telefone, mensagem e data; verificação de `pairingRevision`; idempotência para retry com o mesmo ID; bloqueio de alterações nos repositórios de participantes, pessoas e grupos; invalidação com preservação do histórico; rota e tela com confirmação e revelação individual.
 
-**Preparação do repositório:** README reorganizado para GitHub com descrição curta, requisitos, configuração, comandos, arquitetura, estado real, política de desenvolvimento assistido por IA e limitações; caminhos de máquina e identificador da conta local foram generalizados na documentação. O `pubspec.yaml` agora descreve apenas recursos já implementados. O repositório Git independente foi inicializado, o remoto `origin` foi configurado e o commit inicial foi criado; o push ainda está pendente.
+**Preparação do repositório:** README reorganizado para GitHub com descrição curta, requisitos, configuração, comandos, arquitetura, estado real, política de desenvolvimento assistido por IA e limitações; caminhos de máquina e identificador da conta local foram generalizados na documentação. O `pubspec.yaml` agora descreve apenas recursos já implementados. O repositório Git independente foi inicializado e publicado no remoto `origin`; o commit inicial `0383fad` está em `main` e a cópia local estava limpa após o push.
 
 **Verificações executadas:**
 
@@ -274,5 +274,6 @@ Os testes cobrem criação de evento/participante/grupo, migração 1→2, trans
 | Integração Windows | `flutter test integration_test -d windows` | Não executou: o projeto não tem plataforma Windows configurada |
 | Integração Web (driver) | `flutter drive -d chrome --driver=test_driver/integration_test.dart --target=integration_test/app_flow_test.dart` | Aguardou conexão do serviço de depuração por cerca de um minuto; encerrado sem resultado. Comando atualizado no README e neste documento para nova tentativa em ambiente com Chrome/driver disponível |
 | Build Web release | `flutter build web --release` | Concluído em 74,5 s; build gerado |
+| Publicação Git | `git push -u origin main` | Concluído; `origin/main` confirmado em `0383fad` |
 
 Os telefones exibidos nos testes, exemplos e dicas da interface usam faixas fictícias de teste. A execução do fluxo de integração permanece pendente e não deve ser reportada como aprovada. A criação do repositório remoto e o commit inicial são uma atividade de publicação independente da Fase 3; após concluí-la, retomar a revisão de acessibilidade e a cobertura automatizada da UI.
