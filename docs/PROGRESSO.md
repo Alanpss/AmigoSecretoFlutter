@@ -19,13 +19,13 @@ As Fases 1 e 2 estão concluídas. A Fase 3 está autorizada e começou; o sorte
 | 0 — Planejamento | Concluída | Documentos listados na seção 5 | Nenhuma |
 | 1 — Ambiente e fundação | Concluída | Seções 6 a 9 | Nenhuma |
 | 2 — Cadastro e organização | Concluída | Critérios e verificações nas seções 16 e 17 | Nenhuma |
-| 3 — Sorteio e integridade | Em andamento | Engine e persistência implementados; fluxo principal conferido manualmente | Automatizar UI e revisar acessibilidade antes de fechar os critérios da seção 6 |
+| 3 — Sorteio e integridade | Em andamento | Engine, persistência e novos testes automatizados da UI | Revisar teclado, foco, leitor de tela e contraste antes de fechar os critérios da seção 6 |
 | 4 — WhatsApp e entregas | Não iniciada | Depende da Fase 3 | Aguardar |
 | 5 — Acabamento e backup | Não iniciada | Depende da Fase 4 | Aguardar |
 
 ## 3. Ponto exato de retomada
 
-A Fase 2 foi aceita após testes automatizados e verificação manual. O usuário autorizou a Fase 3. Matching, diagnósticos, persistência atômica e telas principais estão implementados e o fluxo foi conferido manualmente em navegador. O ponto de retomada é obter cobertura automatizada estável da UI de sorteio e revisar acessibilidade por teclado e semântica. Não iniciar WhatsApp nem backup.
+A Fase 2 foi aceita após testes automatizados e verificação manual. O usuário autorizou a Fase 3. Matching, diagnósticos, persistência atômica e telas principais estão implementados. A UI agora tem testes estáveis para o estado oculto, revelação individual, semântica dos botões, alvo de toque, escala de texto e diagnóstico nominal. O ponto de retomada é verificar teclado, ordem de foco, leitor de tela e contraste; depois revisar os critérios restantes. Não iniciar WhatsApp nem backup.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -204,7 +204,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-Completar a verificação observável da Fase 3: automatizar a tela de resultado e inspeção manual responsiva/acessível; corrigir os gaps encontrados. Só então revisar todos os critérios de aceite da seção 6 do plano e decidir se a fase está pronta. Não iniciar WhatsApp nem backup.
+Completar a verificação de acessibilidade da tela de sorteio com teclado, ordem de foco, leitor de tela e contraste; corrigir os gaps encontrados. Só então revisar todos os critérios de aceite da seção 6 do plano e decidir se a fase está pronta. Não iniciar WhatsApp nem backup.
 
 ## 15. Histórico
 
@@ -259,7 +259,7 @@ Os testes cobrem criação de evento/participante/grupo, migração 1→2, trans
 
 **Verificação manual do fluxo em 360×800:** em origem local temporária, criados evento e três participantes com nomes fictícios; a revisão permitiu o sorteio e explicou que os contatos ausentes geram entrega manual; confirmação explícita gravou resultado; os três resultados estavam ocultos; revelar um cartão mostrou apenas seu destinatário; recarregar a rota manteve o mesmo sorteio e tornou a ocultá-lo novamente; tentar editar participante mostrou bloqueio e atalho para a tela de sorteio; a invalidação exibiu contagens (zero conversas abertas e zero envios confirmados) e voltou a habilitar novo sorteio. Não houve envio externo. O servidor local foi encerrado ao fim da verificação.
 
-**Pendências para aceite:** um teste de widget isolado para a tela de resultado foi tentado, mas não concluiu no harness; foi removido e anotado em `docs/TESTES.md`. Falta cobertura automatizada estável da UI e revisão de acessibilidade por teclado/semântica. Os testes de repositório cobrem bloqueio de participante/pessoa/grupo e histórico/invalidação. A Fase 3 continua em andamento, não aceita. A Fase 4 permanece não autorizada.
+**Situação naquele ponto:** ainda faltavam testes estáveis da UI e revisão de acessibilidade. A continuação da seção 19 acrescenta cobertura automatizada da tela de resultado; teclado, foco, leitor de tela e contraste continuam pendentes. A Fase 3 segue em andamento, não aceita. A Fase 4 permanece não autorizada.
 
 ### Verificação e preparação para publicação em 2026-11-03
 
@@ -276,4 +276,20 @@ Os testes cobrem criação de evento/participante/grupo, migração 1→2, trans
 | Build Web release | `flutter build web --release` | Concluído em 74,5 s; build gerado |
 | Publicação Git | `git push -u origin main` | Concluído; `origin/main` confirmado em `0383fad` |
 
-Os telefones exibidos nos testes, exemplos e dicas da interface usam faixas fictícias de teste. A execução do fluxo de integração permanece pendente e não deve ser reportada como aprovada. A criação do repositório remoto e o commit inicial são uma atividade de publicação independente da Fase 3; após concluí-la, retomar a revisão de acessibilidade e a cobertura automatizada da UI.
+Os telefones exibidos nos testes, exemplos e dicas da interface usam faixas fictícias de teste. A execução do fluxo de integração permanece pendente e não deve ser reportada como aprovada. A publicação do repositório foi concluída; o desenvolvimento retomou a Fase 3 na seção seguinte.
+
+## 19. Continuação da Fase 3 — tela de resultado e acessibilidade
+
+**Alterações:** os botões de revelar/ocultar agora têm rótulos semânticos que identificam o participante e área mínima de 48×48 px. Os botões de ação da tela e das confirmações usam altura mínima de 48 px. A revelação continua individual; o texto visível identifica o conteúdo como resultado. Foram adicionados testes de widget para resultado oculto por padrão, revelação de um único cartão, rótulo semântico, alvo de toque e viewport 360×800 com escala de texto 2.0. Outro teste confirma que a tela identifica pelo nome o participante sem opção válida. Testes de domínio cobrem esse diagnóstico e demonstram saída com mais de um ciclo.
+
+**Verificações executadas em 2026-11-03:**
+
+| Verificação | Comando | Resultado |
+| --- | --- | --- |
+| Formatação | `dart format --output=none --set-exit-if-changed .` | 74 arquivos; sem alterações após a formatação |
+| Análise | `flutter analyze` | Sem issues |
+| Testes focados | `flutter test test/features/draw` | 13 testes passaram |
+| Suíte completa | `flutter test` | 50 testes passaram |
+| Build Web release | `flutter build web --release` | Concluído; compilação em 95,1 s |
+
+**Pendente:** revisar manualmente navegação por teclado, ordem de foco, nomes pelo leitor de tela e contraste. A integração Web ainda não executou com sucesso; consultar a limitação registrada na seção 18. Até a verificação manual, a Fase 3 permanece em andamento e a Fase 4 não está autorizada.

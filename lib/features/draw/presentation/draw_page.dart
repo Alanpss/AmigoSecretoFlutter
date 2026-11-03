@@ -85,29 +85,35 @@ class _DrawPageState extends ConsumerState<DrawPage> {
                   ),
                   const SizedBox(height: 12),
                   ...persisted.assignments.map((assignment) {
+                    final giverName =
+                        nameById[assignment.giverParticipantId] ??
+                        'Participante';
                     final visible = _revealed.contains(
                       assignment.giverParticipantId,
                     );
                     return Card(
                       child: ListTile(
-                        title: Text(
-                          nameById[assignment.giverParticipantId] ??
-                              'Participante',
-                        ),
+                        title: Text(giverName),
                         subtitle: Text(
                           visible
-                              ? (nameById[assignment.receiverParticipantId] ??
-                                    'Participante')
+                              ? 'Resultado: ${nameById[assignment.receiverParticipantId] ?? 'Participante'}'
                               : 'Resultado oculto',
                         ),
                         trailing: IconButton(
                           tooltip: visible
-                              ? 'Ocultar resultado'
-                              : 'Revelar resultado',
+                              ? 'Ocultar resultado de $giverName'
+                              : 'Revelar resultado de $giverName',
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
                           icon: Icon(
                             visible
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
+                            semanticLabel: visible
+                                ? 'Ocultar resultado de $giverName'
+                                : 'Revelar resultado de $giverName',
                           ),
                           onPressed: () => setState(
                             () => visible
@@ -123,6 +129,9 @@ class _DrawPageState extends ConsumerState<DrawPage> {
                   const SizedBox(height: 12),
                   FilledButton.tonalIcon(
                     onPressed: () => _invalidate(persisted),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                    ),
                     icon: const Icon(Icons.restart_alt),
                     label: const Text('Invalidar sorteio'),
                   ),
@@ -184,6 +193,9 @@ class _DrawPageState extends ConsumerState<DrawPage> {
                       onPressed: _saving
                           ? null
                           : () => _confirmAndSave(prep, result),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                      ),
                       icon: const Icon(Icons.casino_outlined),
                       label: Text(
                         _saving ? 'Salvando…' : 'Confirmar e salvar sorteio',
@@ -195,6 +207,9 @@ class _DrawPageState extends ConsumerState<DrawPage> {
                 OutlinedButton(
                   onPressed: () =>
                       context.go('/events/${widget.eventId}/review'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                  ),
                   child: const Text('Voltar à revisão'),
                 ),
               ],
@@ -219,10 +234,12 @@ class _DrawPageState extends ConsumerState<DrawPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
             child: const Text('Revisar'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
             child: const Text('Sortear e salvar'),
           ),
         ],
@@ -270,10 +287,12 @@ class _DrawPageState extends ConsumerState<DrawPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
             child: const Text('Manter sorteio'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
             child: const Text('Invalidar'),
           ),
         ],

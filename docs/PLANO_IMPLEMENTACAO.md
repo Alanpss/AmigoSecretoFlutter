@@ -345,7 +345,7 @@ A Fase 2 foi aceita em 2026-11-03, após implementação, testes automatizados e
 - [x] Cobrir matching, diagnósticos, uniformidade, limite de 200, persistência, conflito, invalidação e histórico.
 - [x] Atualizar `docs/PROGRESSO.md`.
 
-**Estado em 2026-11-03:** implementação principal concluída. O fluxo foi conferido manualmente em navegador: confirmação, revelação individual, recarga com resultado oculto, bloqueio de edição com atalho para invalidação, confirmação/impacto da invalidação e viewport 360×800. O teste automatizado isolado da UI não terminou no harness; o aceite final fica pendente de uma cobertura automatizada estável e verificação de acessibilidade.
+**Estado em 2026-11-03:** implementação principal concluída. O fluxo foi conferido manualmente em navegador: confirmação, revelação individual, recarga com resultado oculto, bloqueio de edição com atalho para invalidação, confirmação/impacto da invalidação e viewport 360×800. Foram acrescentados testes isolados de widget para resultado oculto/revelação, nomes semânticos, alvo de toque, viewport 360×800 com texto ampliado e diagnóstico nominal de participante sem opção. O aceite final continua pendente da revisão manual de teclado, foco, leitor de tela e contraste.
 
 ### 6.4 Arquivos e módulos previstos
 
@@ -370,11 +370,11 @@ test/features/delivery/message_template_test.dart
 - [x] Com 0 ou 1 ativo, o sorteio é bloqueado com explicação.
 - [x] Todos no mesmo grupo restrito: impossível, sem relaxar regras.
 - [x] Grupo restrito maior que a metade dos ativos: impossível, com sugestão.
-- [ ] Participante sem opção válida é identificado.
+- [x] Participante sem opção válida é identificado (teste do domínio e nome apresentado na tela).
 - [x] Configuração válida gera exatamente uma saída e uma entrada por ativo.
 - [x] Ninguém tira a si mesmo; nenhum par restrito aparece.
 - [x] Múltiplos grupos e sobreposições são respeitados.
-- [ ] Vários ciclos são aceitos.
+- [x] Vários ciclos são aceitos (teste determinístico encontra e aceita saída com mais de um ciclo).
 - [x] Distribuição uniforme entre soluções válidas é demonstrada por teste estatístico com tolerância.
 - [x] O sorteio é salvo antes de qualquer ação de envio.
 - [x] Falha de revisão não deixa registros parciais (teste de transação).

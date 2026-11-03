@@ -27,7 +27,7 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 
 - Acompanhamento de mensagens e abertura de conversas pelo WhatsApp com confirmação manual do organizador (Fase 4).
 - Exportação e importação de backup JSON (Fase 5).
-- Revisão de acessibilidade e cobertura automatizada estável para a interface do sorteio.
+- Revisão manual de teclado, foco, leitor de tela e contraste; cobertura automatizada adicional dos estados da tela de sorteio.
 
 O plano completo e os critérios de aceite estão em [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md).
 

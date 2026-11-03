@@ -121,7 +121,7 @@ Esses números são fictícios. Não os use para enviar mensagens reais.
 
 ### 5.3 Fase 3 — Sorteio e integridade
 
-Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restrições sobrepostas, diagnóstico, amostragem uniforme dos dois derangements de 3 participantes, cenário com 200 ativos, persistência atômica, idempotência, conflito de revisão, bloqueio em participantes/pessoas/grupos, invalidação, histórico e novo sorteio. O fluxo de confirmação, revelação individual, retomada após recarga, bloqueio com atalho de invalidação, impacto da invalidação e layout 360×800 foram verificados manualmente com dados fictícios. Um teste isolado de widget não concluiu no harness; o aceite da Fase 3 aguarda uma cobertura automatizada estável e revisão de acessibilidade.
+Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restrições sobrepostas, diagnóstico de participante sem opção, amostragem uniforme dos dois derangements de 3 participantes, saída com vários ciclos, cenário com 200 ativos, persistência atômica, idempotência, conflito de revisão, bloqueio em participantes/pessoas/grupos, invalidação, histórico e novo sorteio. Testes de widget cobrem resultados ocultos por padrão, revelação de apenas um cartão, rótulo semântico nominal, alvos de toque de 48 px, viewport 360×800 com texto em escala 2.0 e apresentação do diagnóstico com o nome do participante. A confirmação, retomada após recarga e invalidação também foram conferidas manualmente com dados fictícios. A revisão manual de teclado, ordem de foco, leitor de tela e contraste permanece pendente.
 
 ### 5.4 Fase 4 — WhatsApp e entregas
 
@@ -369,22 +369,13 @@ dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
 flutter test test/features/draw
-flutter test test/features/delivery
-flutter test test/core/phone
 flutter build web --release
 ```
 
-Testes de integração, quando configurados:
+Teste de integração Web no Chrome:
 
 ```powershell
-flutter test integration_test
-```
-
-Na Web, se necessário:
-
-```powershell
-chromedriver --port=4444
-flutter test integration_test -d chrome
+flutter drive -d chrome --driver=test_driver/integration_test.dart --target=integration_test/app_flow_test.dart
 ```
 
 Executar sempre a partir da raiz clonada do repositório.

@@ -44,6 +44,38 @@ void main() {
     expect(result.diagnostics!.groupsThatWouldRestorePossibility, ['Família']);
   });
 
+  test('identifica participante sem nenhuma opção válida', () {
+    final result = engine.draw(
+      request(
+        const ['ana', 'bia', 'caio', 'duda'],
+        const [
+          DrawGroupConstraint(
+            id: 'ana-bia',
+            name: 'Grupo A',
+            participantIds: {'ana', 'bia'},
+            isEnabled: true,
+          ),
+          DrawGroupConstraint(
+            id: 'ana-caio',
+            name: 'Grupo B',
+            participantIds: {'ana', 'caio'},
+            isEnabled: true,
+          ),
+          DrawGroupConstraint(
+            id: 'ana-duda',
+            name: 'Grupo C',
+            participantIds: {'ana', 'duda'},
+            isEnabled: true,
+          ),
+        ],
+      ),
+    );
+
+    expect(result.isPossible, isFalse);
+    expect(result.diagnostics!.participantsWithoutOptions, ['ana']);
+    expect(result.diagnostics!.message, contains('sem nenhuma opção válida'));
+  });
+
   test('não relaxa silenciosamente restrições de vários grupos', () {
     final result = engine.draw(
       request(
@@ -127,6 +159,18 @@ void main() {
     expect((frequencies[0] - frequencies[1]).abs(), lessThan(400));
   });
 
+  test('aceita sorteios que formam mais de um ciclo', () {
+    const ids = ['ana', 'bia', 'caio', 'duda'];
+    var foundMultipleCycles = false;
+
+    for (var seed = 0; seed < 32 && !foundMultipleCycles; seed++) {
+      final result = engine.draw(request(ids), random: Random(seed));
+      foundMultipleCycles = _cycleCount(result.assignments) > 1;
+    }
+
+    expect(foundMultipleCycles, isTrue);
+  });
+
   test('sorteia 200 participantes ativos', () {
     final ids = List<String>.generate(200, (index) => 'person-$index');
 
@@ -139,4 +183,20 @@ void main() {
       expect(entry.key, isNot(entry.value));
     }
   });
+}
+
+int _cycleCount(Map<String, String> assignment) {
+  final visited = <String>{};
+  var cycles = 0;
+
+  for (final giver in assignment.keys) {
+    if (visited.contains(giver)) continue;
+    cycles++;
+    var current = giver;
+    while (visited.add(current)) {
+      current = assignment[current]!;
+    }
+  }
+
+  return cycles;
 }
