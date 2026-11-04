@@ -182,6 +182,28 @@ class _EventOverviewBody extends StatelessWidget {
                           style: theme.textTheme.bodyMedium,
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () =>
+                                context.go('/events/$eventId/message-template'),
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Editar modelo'),
+                          ),
+                          if (overview.event.activeDrawId != null)
+                            FilledButton.icon(
+                              onPressed: () =>
+                                  context.go('/events/$eventId/deliveries'),
+                              icon: const Icon(
+                                Icons.mark_email_unread_outlined,
+                              ),
+                              label: const Text('Abrir entregas'),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

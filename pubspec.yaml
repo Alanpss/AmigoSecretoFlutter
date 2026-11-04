@@ -44,6 +44,7 @@ dependencies:
     sdk: flutter
   uuid: ^4.6.0
   phone_numbers_parser: ^9.0.29
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

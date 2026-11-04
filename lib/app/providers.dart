@@ -10,6 +10,8 @@ import '../features/events/domain/review_summary.dart';
 import '../features/draw/data/draw_repository.dart';
 import '../features/draw/data/draw_records.dart';
 import '../features/draw/domain/draw_engine.dart';
+import '../features/delivery/data/delivery_repository.dart';
+import '../features/delivery/presentation/whatsapp_launcher.dart';
 import '../features/groups/data/group_repository.dart';
 import '../features/groups/domain/group.dart';
 import '../features/participants/data/participant_repository.dart';
@@ -47,6 +49,14 @@ final drawRepositoryProvider = Provider<DrawRepository>((ref) {
   return DrawRepository(ref.watch(appDatabaseProvider).database);
 });
 
+final deliveryRepositoryProvider = Provider<DeliveryRepository>((ref) {
+  return DeliveryRepository(ref.watch(appDatabaseProvider).database);
+});
+
+final whatsAppLauncherProvider = Provider<WhatsAppLauncher>(
+  (ref) => const UrlLauncherWhatsAppLauncher(),
+);
+
 final drawEngineProvider = Provider<DrawEngine>((ref) => const DrawEngine());
 
 final drawPreparationProvider = FutureProvider.family<DrawPreparation, String>((
@@ -62,6 +72,11 @@ final activeDrawProvider = FutureProvider.family<PersistedDraw?, String>((
 ) {
   return ref.watch(drawRepositoryProvider).getActiveDraw(eventId);
 });
+
+final activeDeliveriesProvider =
+    FutureProvider.family<List<DeliveryRecord>, String>((ref, eventId) {
+      return ref.watch(deliveryRepositoryProvider).getForActiveEvent(eventId);
+    });
 
 /// Eventos com contagem de participantes para a lista inicial.
 final eventsProvider = FutureProvider<List<EventSummary>>((ref) async {
@@ -203,6 +218,7 @@ void refreshEvent(WidgetRef ref, String eventId) {
   ref.invalidate(reviewProvider(eventId));
   ref.invalidate(drawPreparationProvider(eventId));
   ref.invalidate(activeDrawProvider(eventId));
+  ref.invalidate(activeDeliveriesProvider(eventId));
 }
 
 /// Invalida a lista de eventos (por exemplo, após criar ou excluir).

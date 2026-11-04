@@ -1,16 +1,16 @@
 # Progresso
 
 **Última atualização:** 2026-11-03
-**Fase atual:** Fase 3 — Sorteio e integridade **em andamento**
-**Próxima fase:** Fase 4 — WhatsApp e entregas **não autorizada**
-**Implementação:** Fase 2 aceita; implementação da Fase 3 iniciada por autorização do usuário
+**Fase atual:** Fase 4 — WhatsApp e entregas **em andamento**
+**Próxima fase:** Fase 5 — Backup e acabamento **não autorizada**
+**Implementação:** Fase 3 aceita pelo usuário; Fase 4 iniciada por autorização explícita
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
 
 Este documento é a fonte de verdade para o **estado real do trabalho** e para o ponto exato de retomada. Em caso de divergência com outros documentos, vale o que está registrado aqui; o conflito deve ser resolvido antes de continuar.
 
 ## 1. Situação em uma frase
 
-As Fases 1 e 2 estão concluídas. A Fase 3 está autorizada e começou; o sorteio, persistência do resultado, bloqueio de edição e invalidação são o escopo ativo.
+As Fases 1 a 3 estão concluídas. A Fase 4 está autorizada e começou; mensagens, links oficiais do WhatsApp e acompanhamento manual das entregas são o escopo ativo.
 
 ## 2. Situação por fase
 
@@ -19,13 +19,13 @@ As Fases 1 e 2 estão concluídas. A Fase 3 está autorizada e começou; o sorte
 | 0 — Planejamento | Concluída | Documentos listados na seção 5 | Nenhuma |
 | 1 — Ambiente e fundação | Concluída | Seções 6 a 9 | Nenhuma |
 | 2 — Cadastro e organização | Concluída | Critérios e verificações nas seções 16 e 17 | Nenhuma |
-| 3 — Sorteio e integridade | Em andamento | Engine, persistência e novos testes automatizados da UI | Revisar teclado, foco, leitor de tela e contraste antes de fechar os critérios da seção 6 |
-| 4 — WhatsApp e entregas | Não iniciada | Depende da Fase 3 | Aguardar |
+| 3 — Sorteio e integridade | Aceita | Testes automatizados passaram; usuário confirmou revisão manual de teclado, foco, leitor de tela e contraste | Nenhuma |
+| 4 — WhatsApp e entregas | Em andamento | Domínio, persistência, editor, fila e testes automatizados implementados | Verificação manual no navegador da abertura do link e revisão dos fluxos responsivos |
 | 5 — Acabamento e backup | Não iniciada | Depende da Fase 4 | Aguardar |
 
 ## 3. Ponto exato de retomada
 
-A Fase 2 foi aceita após testes automatizados e verificação manual. O usuário autorizou a Fase 3. Matching, diagnósticos, persistência atômica e telas principais estão implementados. A UI agora tem testes estáveis para o estado oculto, revelação individual, semântica dos botões, alvo de toque, escala de texto e diagnóstico nominal. O ponto de retomada é verificar teclado, ordem de foco, leitor de tela e contraste; depois revisar os critérios restantes. Não iniciar WhatsApp nem backup.
+As Fases 1 a 3 foram aceitas. A Fase 4 foi autorizada pelo usuário em 2026-11-03. Modelo, links, snapshots, fila e testes automatizados já foram implementados. O próximo passo é verificar a experiência no navegador, incluindo a abertura do link usando apenas dados fictícios, sem tocar em Enviar. Não iniciar backup, publicação ou envio real.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -204,7 +204,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-Completar a verificação de acessibilidade da tela de sorteio com teclado, ordem de foco, leitor de tela e contraste; corrigir os gaps encontrados. Só então revisar todos os critérios de aceite da seção 6 do plano e decidir se a fase está pronta. Não iniciar WhatsApp nem backup.
+Concluir a revisão manual da Fase 4 no navegador com evento, participantes e telefone fictícios; confirmar editor, filtro, cópia e redirecionamento click-to-chat sem enviar a mensagem. Registrar navegador/viewport e resultado. Corrigir problemas encontrados e repetir análise, testes, formatação e build. Não iniciar backup ou publicação.
 
 ## 15. Histórico
 
@@ -219,6 +219,7 @@ Completar a verificação de acessibilidade da tela de sorteio com teclado, orde
 | 2026-11-03 | Autorização para continuar a implementação | Fase 2 liberada pelo pedido do usuário |
 | 2026-11-03 | Aceite da Fase 2 e autorização da próxima | Critérios verificados; Fase 3 autorizada pelo usuário |
 | 2026-11-03 | Implementação principal da Fase 3 | Motor, persistência atômica e telas implementados; testes automatizados e fluxo visual manual verificados; aceite de acessibilidade pendente |
+| 2026-11-03 | Implementação parcial da Fase 4 | Editor, links, fila e confirmação manual implementados; testes automatizados e build aprovados; revisão manual de navegador ainda pendente |
 
 ## 16. Fase 2 — implementação e aceite
 
@@ -259,7 +260,7 @@ Os testes cobrem criação de evento/participante/grupo, migração 1→2, trans
 
 **Verificação manual do fluxo em 360×800:** em origem local temporária, criados evento e três participantes com nomes fictícios; a revisão permitiu o sorteio e explicou que os contatos ausentes geram entrega manual; confirmação explícita gravou resultado; os três resultados estavam ocultos; revelar um cartão mostrou apenas seu destinatário; recarregar a rota manteve o mesmo sorteio e tornou a ocultá-lo novamente; tentar editar participante mostrou bloqueio e atalho para a tela de sorteio; a invalidação exibiu contagens (zero conversas abertas e zero envios confirmados) e voltou a habilitar novo sorteio. Não houve envio externo. O servidor local foi encerrado ao fim da verificação.
 
-**Situação naquele ponto:** ainda faltavam testes estáveis da UI e revisão de acessibilidade. A continuação da seção 19 acrescenta cobertura automatizada da tela de resultado; teclado, foco, leitor de tela e contraste continuam pendentes. A Fase 3 segue em andamento, não aceita. A Fase 4 permanece não autorizada.
+**Situação naquele ponto:** ainda faltavam testes estáveis da UI e revisão de acessibilidade. A seção 19 acrescentou a cobertura automatizada; a revisão manual foi concluída e aceita pelo usuário na seção 20.
 
 ### Verificação e preparação para publicação em 2026-11-03
 
@@ -292,4 +293,29 @@ Os telefones exibidos nos testes, exemplos e dicas da interface usam faixas fict
 | Suíte completa | `flutter test` | 50 testes passaram |
 | Build Web release | `flutter build web --release` | Concluído; compilação em 95,1 s |
 
-**Pendente:** revisar manualmente navegação por teclado, ordem de foco, nomes pelo leitor de tela e contraste. A integração Web ainda não executou com sucesso; consultar a limitação registrada na seção 18. Até a verificação manual, a Fase 3 permanece em andamento e a Fase 4 não está autorizada.
+**Pendente naquele ponto:** revisão manual de teclado, ordem de foco, leitor de tela e contraste. A seção 20 registra a conclusão dessa revisão e o aceite da Fase 3.
+
+## 20. Aceite da Fase 3 e autorização da Fase 4
+
+Em 2026-11-03, o usuário confirmou que a revisão manual solicitada para teclado, ordem de foco, leitor de tela e contraste ocorreu sem problemas e autorizou o início da próxima fase. A Fase 3 fica aceita. O runner de integração Web permaneceu sem resultado por limitação do ambiente, registrada na seção 18; os testes unitários/widget, a persistência e os fluxos observáveis foram verificados por meios automatizados e manuais.
+
+A Fase 4 está autorizada. Seu escopo segue a seção 7 de `docs/PLANO_IMPLEMENTACAO.md` e o ADR-004: modelo de mensagem validado, destinatário direto, link universal `wa.me`, fila e confirmação manual. Não enviar automaticamente, não usar automação não oficial e não iniciar backup. A próxima ação de implementação está descrita na seção 3.
+
+## 21. Fase 4 — implementação parcial
+
+**Implementado:** parser Dart puro com variáveis permitidas, chaves validadas e limite de 2.000 code points; prévia fictícia; reutilização da normalização E.164 e do resolvedor direto de responsável; URI `wa.me` codificada; launcher injetável com `url_launcher`; fila por entrega individual; abrir, reabrir, copiar, filtrar e confirmar; entrega sem contato para ação manual; transições persistidas; editor que oferece atualizar só pendentes; validação do modelo também na criação/edição do evento.
+
+**Verificações executadas em 2026-11-03:**
+
+| Verificação | Comando | Resultado |
+| --- | --- | --- |
+| Dependências | `flutter pub get` | Concluído; `url_launcher 6.3.3` resolvido e lock atualizado |
+| Formatação | `dart format --output=none --set-exit-if-changed .` | 85 arquivos; sem alterações |
+| Análise | `flutter analyze` | `No issues found!` |
+| Testes focados | `flutter test test/features/delivery test/features/participants/domain/phone_number_test.dart test/features/participants/domain/guardian_resolver_test.dart test/features/draw/data/draw_repository_test.dart` | 35 testes passaram |
+| Suíte completa | `flutter test` | 73 testes passaram |
+| Build Web release | `flutter build web --release` | Concluído em 80,2 s; saída em `build/web` |
+
+**Cobertura acrescentada:** sucesso/falha do launcher fake, status aberto sem confirmação, cópia sem alterar status, filtro de pendentes, confirmação manual sem telefone, telefone/link/modelo e atualização transacional somente de pendentes. Um teste do repositório de sorteio verifica entregas e mensagens individuais para três participantes que compartilham o mesmo responsável.
+
+**Pendente:** verificar visualmente editor e fila no Chrome/Edge em viewport compacto e desktop; testar que o link abre o destino com texto preenchido usando somente telefone fictício, sem enviar a mensagem; conferir cópia e navegação. A tentativa de automação do navegador foi interrompida antes de interagir porque não foi possível identificar com segurança a URL da aba já aberta; nenhum dado foi inserido e nenhuma conversa foi aberta. O teste de integração Web continua pendente pela limitação de Chromedriver já registrada na seção 18. A Fase 4 permanece parcial e a Fase 5 não foi iniciada nem autorizada.

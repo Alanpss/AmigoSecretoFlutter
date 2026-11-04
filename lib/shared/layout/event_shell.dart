@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/providers.dart';
 import '../widgets/async_states.dart';
 
-/// Layout do evento, com navegação entre visão geral, participantes, grupos e
-/// revisão.
+/// Layout do evento, com navegação entre visão geral, cadastros e entregas.
 class EventShell extends ConsumerWidget {
   const EventShell({
     super.key,
@@ -43,6 +42,12 @@ class EventShell extends ConsumerWidget {
       icon: Icons.checklist_outlined,
       selectedIcon: Icons.checklist,
       segment: '/review',
+    ),
+    _EventDestination(
+      label: 'Entregas',
+      icon: Icons.mark_email_unread_outlined,
+      selectedIcon: Icons.mark_email_read_outlined,
+      segment: '/deliveries',
     ),
   ];
 

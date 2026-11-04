@@ -7,6 +7,8 @@ import '../features/events/presentation/event_list_page.dart';
 import '../features/events/presentation/event_overview_page.dart';
 import '../features/events/presentation/review_page.dart';
 import '../features/draw/presentation/draw_page.dart';
+import '../features/delivery/presentation/delivery_queue_page.dart';
+import '../features/delivery/presentation/message_template_page.dart';
 import '../features/groups/presentation/group_form_page.dart';
 import '../features/groups/presentation/group_list_page.dart';
 import '../features/participants/presentation/participant_form_page.dart';
@@ -107,6 +109,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => eventShell(
           state,
           DrawPage(eventId: state.pathParameters['eventId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/events/:eventId/deliveries',
+        builder: (context, state) => eventShell(
+          state,
+          DeliveryQueuePage(eventId: state.pathParameters['eventId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/events/:eventId/message-template',
+        builder: (context, state) => eventShell(
+          state,
+          MessageTemplatePage(eventId: state.pathParameters['eventId']!),
         ),
       ),
     ],

@@ -307,7 +307,8 @@ Restrições: `(drawId, giverParticipantId)` único; `(drawId, receiverParticipa
 | `openedAt` | DateTime? | Quando o link foi aberto. |
 | `confirmedAt` | DateTime? | Confirmação manual. |
 | `confirmationMethod` | String? | `whatsapp` ou `manual`. |
-| `lastOpenError` | String? | Erro sanitizado, sem dados pessoais. |
+
+Falha ao abrir não é persistida como estado separado: a entrega permanece `pending` e a interface oferece copiar a mensagem. Ao reabrir uma conversa já confirmada, a confirmação e seu método são preservados.
 
 Snapshots protegem o que foi efetivamente mostrado/enviado. Se o modelo mudar, apenas entregas `pending` podem ser atualizadas com ação explícita.
 
@@ -424,9 +425,10 @@ Tentar permutações até achar uma válida pode ser exponentialmente lento, fal
 1. Fila carrega entregas do draw ativo.
 2. Cada cartão resolve dono, destinatário e telefone a partir dos snapshots.
 3. “Abrir WhatsApp” monta `wa.me` e chama o launcher.
-4. Sucesso → `opened` (se pendente); falha → permanece pendente + erro.
-5. Organizador volta e confirma manualmente → `confirmed` com método.
-6. Nenhum estado é inferido como entrega/leitura.
+4. Sucesso → `opened` (se pendente); falha → permanece pendente e a interface oferece cópia.
+5. Organizador volta e confirma manualmente → `confirmed` com método; isso registra a confirmação do organizador, não prova entrega ou leitura.
+6. O editor salva o modelo em transação e só reescreve snapshots `pending` quando o organizador escolhe atualizar; mensagens `opened` ou `confirmed` mantêm o conteúdo anterior.
+7. Nenhum estado é inferido como entrega/leitura.
 
 ### 8.5 Invalidação
 

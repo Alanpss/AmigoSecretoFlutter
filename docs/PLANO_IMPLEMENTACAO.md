@@ -19,8 +19,8 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 0 | Planejar sem implementar | Documentação, decisões e ambiente mapeado | — | Concluída em 2026-11-03 |
 | 1 | Preparar ambiente e fundação | Flutter instalado, projeto Web executável, banco e navegação básicos | Fase 0 + confirmação da plataforma | Concluída em 2026-11-03 |
 | 2 | Cadastro e organização | Eventos, pessoas, participantes, responsáveis e grupos funcionando | Fase 1 | Bloqueada |
-| 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Em andamento |
-| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 | Bloqueada |
+| 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Aceita em 2026-11-03 |
+| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Em andamento |
 | 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4 | Bloqueada |
 
 ## 3. Fase 0 — Planejamento (concluída)
@@ -421,7 +421,7 @@ flutter build web --release
 
 ### 6.8 Portão de saída
 
-A Fase 3 é aceita quando o sorteio é demonstrável como válido, uniforme, persistente, retomável e protegido, com todos os testes da fase passando. **A Fase 4 só começa com nova autorização.**
+A Fase 3 foi aceita em 2026-11-03, após testes automatizados e verificação manual de acessibilidade confirmada pelo usuário. A Fase 4 foi iniciada com autorização explícita do usuário na mesma data; a Fase 5 continua exigindo nova autorização.
 
 ---
 
@@ -453,18 +453,18 @@ A Fase 3 é aceita quando o sorteio é demonstrável como válido, uniforme, per
 
 ### 7.3 Checklist
 
-- [ ] Implementar `MessageTemplate` com parser restrito e erros tipados.
-- [ ] Implementar prévia com dados fictícios.
-- [ ] Implementar `PhoneNumber` e normalização para E.164/link.
-- [ ] Implementar `RecipientResolver` sem cadeia.
-- [ ] Implementar `WhatsAppLink` com `Uri.encodeComponent`.
-- [ ] Implementar `WhatsAppLauncher` injetável.
-- [ ] Implementar fila, cartões, filtros e estados.
-- [ ] Implementar copiar, reabrir, marcar como enviado e confirmação manual.
-- [ ] Implementar tratamento de falha e entrega sem contato.
-- [ ] Implementar atualização de mensagens pendentes após editar o modelo.
-- [ ] Cobrir link, telefone, modelo, destinatário e estados com testes.
-- [ ] Atualizar `docs/PROGRESSO.md`.
+- [x] Implementar `MessageTemplate` com parser restrito e erros tipados.
+- [x] Implementar prévia com dados fictícios.
+- [x] Reutilizar a normalização para E.164 existente em `participants/domain/phone_number.dart`.
+- [x] Reutilizar o resolvedor de destinatário direto, sem cadeia, existente em `participants/domain/guardian_resolver.dart`.
+- [x] Implementar `WhatsAppLink` com `Uri.encodeComponent`.
+- [x] Implementar `WhatsAppLauncher` injetável.
+- [x] Implementar fila, cartões, filtro e estados.
+- [x] Implementar copiar, reabrir, marcar como enviado e confirmação manual.
+- [x] Implementar tratamento de falha e entrega sem contato.
+- [x] Implementar atualização de mensagens pendentes após editar o modelo.
+- [x] Cobrir link, telefone, modelo, destinatário e estados com testes automatizados.
+- [x] Atualizar `docs/PROGRESSO.md`.
 
 ### 7.4 Arquivos e módulos previstos
 
@@ -486,19 +486,20 @@ test/features/delivery/...
 ### 7.5 Critérios de aceite observáveis
 
 - [ ] O link abre a conversa do destinatário correto com a mensagem pronta.
-- [ ] Números são normalizados; `+` é removido do link.
-- [ ] Acentos, emojis, quebras de linha e chaves são codificados corretamente.
-- [ ] Abrir a conversa muda para “Conversa aberta”, nunca para “Envio confirmado”.
-- [ ] “Marcar como enviado” pede confirmação e registra o método.
-- [ ] “Copiar mensagem” não altera o estado.
-- [ ] “Reabrir” preserva uma confirmação existente.
-- [ ] Filtro de pendentes mostra apenas pendentes.
-- [ ] Várias pessoas com o mesmo responsável geram cartões e mensagens separados.
-- [ ] Entrega sem contato é identificada e pode ser confirmada como manual.
-- [ ] O app nunca exibe “entregue” ou “lido”.
-- [ ] Variável desconhecida ou chave não fechada gera erro de validação.
-- [ ] Mensagens abertas/confirmadas mantêm o conteúdo; pendentes podem ser atualizadas com ação explícita.
-- [ ] Falha ao abrir mantém a entrega pendente e oferece copiar.
+- [ ] Em verificação manual, o link abre o destinatário correto com a mensagem pronta (sem enviar).
+- [x] Números são normalizados; `+` é removido do link.
+- [x] Acentos, emojis, quebras de linha e caracteres especiais são codificados corretamente.
+- [x] Abrir a conversa muda para “Conversa aberta”, nunca para “Envio confirmado” (launcher fake).
+- [x] “Marcar como enviado” pede confirmação e registra o método.
+- [x] “Copiar mensagem” não altera o estado.
+- [x] “Reabrir” preserva uma confirmação existente.
+- [x] Filtro de pendentes mostra apenas pendentes.
+- [x] Várias pessoas com o mesmo responsável geram entregas e mensagens separadas.
+- [x] Entrega sem contato é identificada e pode ser confirmada como manual.
+- [x] O app não exibe estados “entregue” ou “lido”.
+- [x] Variável desconhecida ou chave não fechada gera erro de validação.
+- [x] Mensagens abertas/confirmadas mantêm o conteúdo; pendentes podem ser atualizadas com ação explícita.
+- [x] Falha ao abrir mantém a entrega pendente e oferece copiar.
 
 ### 7.6 Testes e comandos
 

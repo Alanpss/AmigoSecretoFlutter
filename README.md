@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fase 3 — sorteio e integridade em andamento. A Fase 4 (WhatsApp) e a Fase 5 (backup) ainda não foram implementadas. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
+> **Estado:** Fases 1–3 aceitas; Fase 4 (WhatsApp e acompanhamento das entregas) em implementação. Backup pertence à Fase 5 e ainda não foi iniciado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
 
 ## Descrição para o GitHub
 
@@ -22,12 +22,13 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 - Motor Dart puro com matching bipartido, diagnóstico e amostragem uniforme entre sorteios válidos.
 - Persistência local transacional, proteção por revisão, bloqueio de edição após o sorteio e invalidação com histórico preservado.
 - Resultados ocultos por padrão, com revelação individual.
+- Editor de modelo com variáveis validadas e prévia com dados fictícios.
+- Fila de entregas com cópia, link `wa.me`, confirmação manual e filtro de pendências; a abertura é testada com launcher simulado.
 
 ### Ainda no plano
 
-- Acompanhamento de mensagens e abertura de conversas pelo WhatsApp com confirmação manual do organizador (Fase 4).
+- Revisão manual no navegador da fila e da abertura do link `wa.me`; nenhum envio deve ser feito durante essa verificação.
 - Exportação e importação de backup JSON (Fase 5).
-- Revisão manual de teclado, foco, leitor de tela e contraste; cobertura automatizada adicional dos estados da tela de sorteio.
 
 O plano completo e os critérios de aceite estão em [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md).
 
@@ -98,6 +99,7 @@ lib/
     participants/  pessoas, participantes e responsáveis
     groups/        grupos e restrições
     draw/          matching, persistência e apresentação do sorteio
+    delivery/      modelos, links e acompanhamento manual das entregas
     settings/      configurações
   shared/          layout e widgets reutilizáveis
 test/              testes de domínio, dados e interface

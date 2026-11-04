@@ -7,6 +7,7 @@ import '../../../core/errors/domain_exceptions.dart';
 import '../../../shared/utils/br_format.dart';
 import '../../../shared/widgets/async_states.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
+import '../../delivery/domain/message_template.dart';
 import '../domain/event.dart';
 
 /// Criação e edição de evento.
@@ -294,20 +295,44 @@ class _EventFormContentState extends ConsumerState<_EventFormContent> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _templateController,
-                        minLines: 4,
-                        maxLines: 8,
-                        maxLength: maxMessageTemplateLength,
-                        decoration: const InputDecoration(
-                          labelText: 'Modelo de mensagem',
-                          alignLabelWithHint: true,
-                          border: OutlineInputBorder(),
-                          helperText:
-                              'Variáveis: {evento}, {participante}, '
-                              '{apelido}, {sorteado}, {responsavel}',
+                      if (widget.event?.activeDrawId == null)
+                        TextFormField(
+                          controller: _templateController,
+                          minLines: 4,
+                          maxLines: 8,
+                          maxLength: maxMessageTemplateLength,
+                          decoration: const InputDecoration(
+                            labelText: 'Modelo de mensagem',
+                            alignLabelWithHint: true,
+                            border: OutlineInputBorder(),
+                            helperText:
+                                'Variáveis: {evento}, {participante}, '
+                                '{apelido}, {sorteado}, {responsavel}',
+                          ),
+                          validator: (value) {
+                            try {
+                              MessageTemplate.parse(value ?? '');
+                              return null;
+                            } on MessageTemplateException catch (error) {
+                              return error.message;
+                            }
+                          },
+                        )
+                      else
+                        Card(
+                          child: ListTile(
+                            leading: const Icon(Icons.message_outlined),
+                            title: const Text('Modelo de mensagem'),
+                            subtitle: const Text(
+                              'Edite pelo editor de mensagem para decidir se '
+                              'as entregas pendentes também serão atualizadas.',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.go(
+                              '/events/${widget.event!.id}/message-template',
+                            ),
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
                         onPressed: _saving ? null : _save,

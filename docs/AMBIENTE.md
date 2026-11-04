@@ -81,6 +81,8 @@ Observações:
 - `file_picker` v13 usa `FilePicker.pickFile()`, `FilePicker.saveFile()` e `PlatformFile.readAsBytes()`; a API é diferente de versões antigas.
 - `pubspec.lock` deve ser commitado por ser um aplicativo.
 
+**Fase 4, 2026-11-03:** `url_launcher: ^6.3.3` foi adicionado ao `pubspec.yaml`; `flutter pub get` resolveu `url_launcher 6.3.3` e seus implementadores de plataforma. O launcher usa `LaunchMode.externalApplication`; widgets e testes injetam um fake e não abrem o WhatsApp real.
+
 ## 4. Instalação do Flutter no escopo do usuário
 
 **Pré-requisito:** autorização explícita para a Fase 1.

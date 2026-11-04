@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../../core/database/stores.dart';
 import '../../../core/errors/domain_exceptions.dart';
 import '../../events/domain/event.dart';
+import '../../delivery/domain/message_template.dart';
 import '../../groups/domain/group.dart';
 import '../../participants/domain/guardian_resolver.dart';
 import '../../participants/domain/participant.dart';
@@ -337,18 +338,13 @@ class DrawRepository {
       'sorteado': receiver.displayName,
       'responsavel': recipient.displayName,
     };
-    final template = event.messageTemplate;
-    final tokens = RegExp(r'\{([^{}]+)\}').allMatches(template).toList();
-    if (RegExp(r'\{[^{}]*\}').allMatches(template).length != tokens.length ||
-        tokens.any((m) => !values.containsKey(m[1]))) {
-      throw const ValidationException(
-        'O modelo de mensagem contém uma variável inválida. Corrija o modelo antes de sortear.',
+    try {
+      return MessageTemplate.parse(event.messageTemplate).render(values);
+    } on MessageTemplateException catch (error) {
+      throw ValidationException(
+        '${error.message} Corrija o modelo antes de sortear.',
       );
     }
-    return template.replaceAllMapped(
-      RegExp(r'\{([^{}]+)\}'),
-      (m) => values[m[1]] ?? m[0]!,
-    );
   }
 }
 

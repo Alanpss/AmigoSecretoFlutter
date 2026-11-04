@@ -136,6 +136,35 @@ class DeliveryRecord {
   final DateTime? confirmedAt;
   final String? confirmationMethod;
 
+  DeliveryRecord copyWith({
+    String? status,
+    String? messageSnapshot,
+    DateTime? openedAt,
+    DateTime? confirmedAt,
+    String? confirmationMethod,
+  }) {
+    return DeliveryRecord(
+      id: id,
+      drawId: drawId,
+      assignmentId: assignmentId,
+      eventId: eventId,
+      ownerParticipantId: ownerParticipantId,
+      ownerNameSnapshot: ownerNameSnapshot,
+      drawnNameSnapshot: drawnNameSnapshot,
+      createdAt: createdAt,
+      recipientKind: recipientKind,
+      recipientPersonId: recipientPersonId,
+      recipientNameSnapshot: recipientNameSnapshot,
+      recipientPhoneSnapshot: recipientPhoneSnapshot,
+      channel: channel,
+      status: status ?? this.status,
+      messageSnapshot: messageSnapshot ?? this.messageSnapshot,
+      openedAt: openedAt ?? this.openedAt,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      confirmationMethod: confirmationMethod ?? this.confirmationMethod,
+    );
+  }
+
   Map<String, Object?> toMap() => {
     'id': id,
     'drawId': drawId,

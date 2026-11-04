@@ -121,9 +121,11 @@ Esses números são fictícios. Não os use para enviar mensagens reais.
 
 ### 5.3 Fase 3 — Sorteio e integridade
 
-Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restrições sobrepostas, diagnóstico de participante sem opção, amostragem uniforme dos dois derangements de 3 participantes, saída com vários ciclos, cenário com 200 ativos, persistência atômica, idempotência, conflito de revisão, bloqueio em participantes/pessoas/grupos, invalidação, histórico e novo sorteio. Testes de widget cobrem resultados ocultos por padrão, revelação de apenas um cartão, rótulo semântico nominal, alvos de toque de 48 px, viewport 360×800 com texto em escala 2.0 e apresentação do diagnóstico com o nome do participante. A confirmação, retomada após recarga e invalidação também foram conferidas manualmente com dados fictícios. A revisão manual de teclado, ordem de foco, leitor de tela e contraste permanece pendente.
+Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restrições sobrepostas, diagnóstico de participante sem opção, amostragem uniforme dos dois derangements de 3 participantes, saída com vários ciclos, cenário com 200 ativos, persistência atômica, idempotência, conflito de revisão, bloqueio em participantes/pessoas/grupos, invalidação, histórico e novo sorteio. Testes de widget cobrem resultados ocultos por padrão, revelação de apenas um cartão, rótulo semântico nominal, alvos de toque de 48 px, viewport 360×800 com texto em escala 2.0 e apresentação do diagnóstico com o nome do participante. A confirmação, retomada após recarga, invalidação e revisão manual de teclado, foco, leitor de tela e contraste foram verificadas; o usuário confirmou que os testes manuais ocorreram sem problemas.
 
 ### 5.4 Fase 4 — WhatsApp e entregas
+
+**Implementado e automatizado em 2026-11-03:** 35 testes focados passaram, além da suíte completa de 73 testes. A cobertura inclui parser e substituição de variáveis; limite; URI `wa.me`; responsável compartilhado em entregas separadas; estados de fila; falha/sucesso do launcher fake; cópia sem mudança de estado; filtro; confirmações WhatsApp/manual; contato ausente; atualização somente de pendentes; bloqueio de edição se a fila não puder ser carregada. A revisão manual no navegador e a abertura click-to-chat continuam pendentes.
 
 | Caso | Tipo | Esperado |
 | --- | --- | --- |

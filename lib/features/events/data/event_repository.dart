@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/stores.dart';
 import '../../../core/errors/domain_exceptions.dart';
+import '../../delivery/domain/message_template.dart';
 import '../../participants/domain/validation.dart';
 import '../domain/event.dart';
 import 'event_summary.dart';
@@ -79,12 +80,11 @@ class EventRepository {
       throw ValidationException(nameError);
     }
 
-    final template = (messageTemplate ?? defaultMessageTemplate).trim();
-    if (template.length > maxMessageTemplateLength) {
-      throw const ValidationException(
-        'O modelo de mensagem deve ter no máximo 2000 caracteres.',
-      );
-    }
+    final enteredTemplate = (messageTemplate ?? defaultMessageTemplate).trim();
+    final template = enteredTemplate.isEmpty
+        ? defaultMessageTemplate
+        : enteredTemplate;
+    MessageTemplate.parse(template);
 
     final now = _now();
     final event = Event(
@@ -118,23 +118,28 @@ class EventRepository {
       throw ValidationException(nameError);
     }
 
-    final template = messageTemplate.trim();
-    if (template.length > maxMessageTemplateLength) {
-      throw const ValidationException(
-        'O modelo de mensagem deve ter no máximo 2000 caracteres.',
-      );
-    }
+    final enteredTemplate = messageTemplate.trim();
+    final template = enteredTemplate.isEmpty
+        ? defaultMessageTemplate
+        : enteredTemplate;
+    MessageTemplate.parse(template);
 
     final existing = await getById(id);
     if (existing == null) {
       throw const EntityNotFoundException('Evento não encontrado.');
+    }
+    if (existing.activeDrawId != null && template != existing.messageTemplate) {
+      throw const ValidationException(
+        'O sorteio está ativo. Use o editor de mensagem para escolher se as '
+        'entregas pendentes também devem ser atualizadas.',
+      );
     }
 
     final updated = existing.copyWith(
       name: normalizedName,
       eventDate: _dateOnly(eventDate),
       clearEventDate: eventDate == null,
-      messageTemplate: template.isEmpty ? defaultMessageTemplate : template,
+      messageTemplate: template,
       updatedAt: _now(),
     );
 

@@ -34,6 +34,60 @@ void main() {
 
   tearDown(() => database.close());
 
+  test(
+    'responsável compartilhado mantém uma entrega separada por participante',
+    () async {
+      final event = await events.create(name: 'Encontro de teste');
+      final guardian = await people.create(
+        name: 'Carla Exemplo',
+        phoneE164: '+5511900000003',
+      );
+      final a = await participants.createWithNewPerson(
+        eventId: event.id,
+        name: 'Ana Exemplo',
+        guardianPersonId: guardian.id,
+      );
+      final b = await participants.createWithNewPerson(
+        eventId: event.id,
+        name: 'Beto Exemplo',
+        guardianPersonId: guardian.id,
+      );
+      final c = await participants.createWithNewPerson(
+        eventId: event.id,
+        name: 'Cris Exemplo',
+        guardianPersonId: guardian.id,
+      );
+
+      final preparation = await draws.prepare(event.id);
+      final result = await draws.saveDraw(
+        eventId: event.id,
+        drawId: 'draw-shared-guardian',
+        pairingRevision: preparation.pairingRevision,
+        pairing: const DrawEngine().draw(preparation.request).assignments,
+      );
+
+      expect(result.deliveries, hasLength(3));
+      expect(
+        result.deliveries
+            .map((delivery) => delivery.ownerParticipantId)
+            .toSet(),
+        {a.id, b.id, c.id},
+      );
+      expect(
+        result.deliveries.every(
+          (delivery) =>
+              delivery.recipientPersonId == guardian.id &&
+              delivery.recipientPhoneSnapshot == '+5511900000003',
+        ),
+        isTrue,
+      );
+      expect(
+        result.deliveries.map((delivery) => delivery.messageSnapshot).toSet(),
+        hasLength(3),
+      );
+    },
+  );
+
   test('salva tudo atomicamente, retorna sorteio ativo e invalida preservando histórico', () async {
     final event = await events.create(name: 'Encontro fictício');
     final a = await participants.createWithNewPerson(
