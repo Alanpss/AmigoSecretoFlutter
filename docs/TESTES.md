@@ -125,7 +125,7 @@ Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restriçõe
 
 ### 5.4 Fase 4 — WhatsApp e entregas
 
-**Implementado e automatizado em 2026-11-03:** 35 testes focados passaram, além da suíte completa de 73 testes. A cobertura inclui parser e substituição de variáveis; limite; URI `wa.me`; responsável compartilhado em entregas separadas; estados de fila; falha/sucesso do launcher fake; cópia sem mudança de estado; filtro; confirmações WhatsApp/manual; contato ausente; atualização somente de pendentes; bloqueio de edição se a fila não puder ser carregada. A revisão manual no navegador e a abertura click-to-chat continuam pendentes.
+**Implementado e automatizado em 2026-11-03:** 34 testes focados passaram, além da suíte completa de 73 testes. A cobertura inclui parser e substituição de variáveis; limite; URI `wa.me`; responsável compartilhado em entregas separadas; estados de fila; falha/sucesso do launcher fake; cópia sem mudança de estado; filtro; confirmações WhatsApp/manual; contato ausente; atualização somente de pendentes; bloqueio de edição se a fila não puder ser carregada. A revisão manual no navegador e a abertura click-to-chat continuam pendentes.
 
 | Caso | Tipo | Esperado |
 | --- | --- | --- |

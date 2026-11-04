@@ -312,7 +312,7 @@ A Fase 4 está autorizada. Seu escopo segue a seção 7 de `docs/PLANO_IMPLEMENT
 | Dependências | `flutter pub get` | Concluído; `url_launcher 6.3.3` resolvido e lock atualizado |
 | Formatação | `dart format --output=none --set-exit-if-changed .` | 85 arquivos; sem alterações |
 | Análise | `flutter analyze` | `No issues found!` |
-| Testes focados | `flutter test test/features/delivery test/features/participants/domain/phone_number_test.dart test/features/participants/domain/guardian_resolver_test.dart test/features/draw/data/draw_repository_test.dart` | 35 testes passaram |
+| Testes focados | `flutter test test/features/delivery test/features/participants/domain/phone_number_test.dart test/features/participants/domain/guardian_resolver_test.dart test/features/draw/data/draw_repository_test.dart` | 34 testes passaram |
 | Suíte completa | `flutter test` | 73 testes passaram |
 | Build Web release | `flutter build web --release` | Concluído em 80,2 s; saída em `build/web` |
 
