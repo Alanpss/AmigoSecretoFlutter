@@ -80,7 +80,12 @@ DateTime _systemNow() => DateTime.now().toUtc();
 
 /// Borda de arquivo para exportar e selecionar backups.
 abstract interface class BackupFileService {
-  Future<Uri?> save({required String fileName, required Uint8List bytes});
+  Future<BackupSaveResult> save({
+    required String fileName,
+    required Uint8List bytes,
+  });
 
   Future<Uint8List?> pick({required int maxBytes});
 }
+
+enum BackupSaveResult { cancelled, saved, downloadStarted }

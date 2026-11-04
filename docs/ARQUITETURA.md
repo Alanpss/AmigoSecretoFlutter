@@ -192,6 +192,7 @@ Chaves são IDs UUID em string. Consultas pequenas carregam o conjunto do evento
 - Importação apaga e repõe os stores dentro de uma única transação. Falha reverte todos os writes. Providers derivados são invalidados depois do commit.
 - Um backup contém telefones e resultados, não é criptografado e nunca deve ser incluído no repositório.
 - Quando a abertura normal do banco falha, a tela inicial oferece selecionar e validar um backup; após confirmação, importa em transação e tenta abrir o app novamente. Se o próprio armazenamento estiver inacessível/corrompido, a restauração também pode falhar sem apagar automaticamente os dados.
+- Na Web, o download padrão não fornece um caminho de arquivo ao aplicativo; a interface informa que a exportação foi iniciada e orienta conferir os downloads. Cancelamento é identificado nos diálogos de salvamento das plataformas que retornam um destino.
 
 ## 6. Modelo de dados
 

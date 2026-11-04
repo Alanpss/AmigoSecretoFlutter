@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 parcialmente implementada. Backup versionado e regressão automatizada estão prontos; conferências manuais de navegador e acessibilidade ainda faltam. A abertura do link do WhatsApp também segue sem verificação visual. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
+> **Estado:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 parcialmente implementada. Backup, regressão automatizada e fluxos no Chrome com dados fictícios foram verificados. Ainda faltam leitor de tela, zoom manual a 200% e fluxo de arquivo no Edge. No link do WhatsApp, emojis apareceram como caracteres de substituição após o redirecionamento, pendente de investigação. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
 
 ## Descrição para o GitHub
 
@@ -29,7 +29,7 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 
 ### Ainda no plano
 
-- Revisão manual no navegador da fila e da abertura do link `wa.me`; nenhum envio deve ser feito durante essa verificação.
+- Investigar emojis exibidos como caracteres de substituição após o redirecionamento do link `wa.me`; nenhum envio real foi feito.
 - Revisão final de responsividade, acessibilidade e fluxos nos navegadores-alvo (Fase 5).
 
 O plano completo e os critérios de aceite estão em [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md).
@@ -130,6 +130,7 @@ O aplicativo **não usa IA durante a execução**. Ferramentas de IA são usadas
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Camadas, dados, algoritmos e fluxos |
 | [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md) | Fases, escopo e portões de aceite |
 | [`docs/PROGRESSO.md`](docs/PROGRESSO.md) | Estado real, verificações e próximo passo |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Preparação do artefato Web e requisitos de hospedagem estática; não publicado |
 | [`docs/AMBIENTE.md`](docs/AMBIENTE.md) | Ferramentas e configuração de desenvolvimento |
 | [`docs/TESTES.md`](docs/TESTES.md) | Estratégia, cenários e comandos |
 | [`docs/decisions/`](docs/decisions/) | Registros das decisões arquiteturais (ADRs) |

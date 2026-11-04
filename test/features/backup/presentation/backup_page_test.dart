@@ -94,6 +94,40 @@ void main() {
     );
   });
 
+  testWidgets('informa que o download Web foi iniciado', (tester) async {
+    files.saveResult = BackupSaveResult.downloadStarted;
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Exportar backup'));
+    await _drainAsync(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(
+      find.textContaining(
+        'Exportação iniciada. Confira os downloads do navegador',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('mostra cancelamento quando diálogo de salvar é cancelado', (
+    tester,
+  ) async {
+    files.saveResult = BackupSaveResult.cancelled;
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Exportar backup'));
+    await _drainAsync(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(
+      find.text('Exportação cancelada. Nenhum arquivo foi salvo.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('pré-visualiza e confirma substituição antes de importar', (
     tester,
   ) async {
@@ -188,17 +222,18 @@ class _FakeBackupFileService implements BackupFileService {
   Uint8List? pickedBytes;
   Uint8List? savedBytes;
   String? savedFileName;
+  BackupSaveResult saveResult = BackupSaveResult.saved;
 
   @override
   Future<Uint8List?> pick({required int maxBytes}) async => pickedBytes;
 
   @override
-  Future<Uri?> save({
+  Future<BackupSaveResult> save({
     required String fileName,
     required Uint8List bytes,
   }) async {
     savedFileName = fileName;
     savedBytes = bytes;
-    return Uri.parse('memory:backup');
+    return saveResult;
   }
 }

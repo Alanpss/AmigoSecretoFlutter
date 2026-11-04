@@ -20,8 +20,8 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 1 | Preparar ambiente e fundação | Flutter instalado, projeto Web executável, banco e navegação básicos | Fase 0 + confirmação da plataforma | Concluída em 2026-11-03 |
 | 2 | Cadastro e organização | Eventos, pessoas, participantes, responsáveis e grupos funcionando | Fase 1 | Aceita em 2026-11-03 |
 | 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Aceita em 2026-11-03 |
-| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada pelo usuário para transição; click-to-chat manual não demonstrado |
-| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Em andamento |
+| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada para transição; link aberto com dado fictício, mas emojis apareceram como caractere de substituição após redirecionamento |
+| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Parcial; leitor de tela, zoom 200% e Edge pendentes |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -573,13 +573,13 @@ A Fase 4 é aceita quando a fila permite abrir, copiar, confirmar e retomar entr
 - [x] Implementar importação com limite de tamanho, validação de schema/referências e prévia.
 - [x] Implementar substituição atômica e reabertura dos providers.
 - [x] Implementar avisos de backup sensível após o sorteio e durante a importação.
-- [ ] Revisar layout em 360×800, tablet e desktop.
-- [ ] Revisar foco, semântica, contraste, toque e escala de texto.
-- [ ] Revisar estados vazios e textos em pt-BR.
-- [x] Executar regressão automatizada completa; o teste existente cobre sorteio com 200 participantes.
+- [x] Revisar layout em 360×800, tablet (768×1024) e desktop (1280×900) no Chrome integrado.
+- [ ] Revisar foco, semântica, contraste, toque e escala de texto; ordem de teclado e pares principais de contraste verificados, leitor de tela, toque físico e zoom manual em 200% pendentes.
+- [x] Revisar estados vazios e textos em pt-BR nos fluxos de backup exercitados.
+- [x] Executar regressão unitária/widget completa (87 testes; inclui sorteio com 200 participantes); integração Web tentada, mas runner pendente por limitação do ambiente.
 - [x] Configurar manifesto/ícones PWA e gerar build release.
 - [x] Atualizar README, PROGRESSO, AMBIENTE, TESTES e limitações.
-- [ ] Preparar instruções de publicação sem executá-las.
+- [x] Preparar instruções de publicação sem executá-las em `docs/DEPLOY.md`.
 
 ### 8.4 Arquivos e módulos previstos
 
@@ -602,15 +602,15 @@ docs/...
 - [x] Backup inválido é rejeitado sem alterar a base atual.
 - [x] Após importar, sorteio ativo e entregas são restaurados.
 - [x] O app avisa que o arquivo contém telefones e resultados.
-- [ ] Fluxo completo funciona em 360×800 e em desktop.
-- [ ] Navegação por teclado e leitor de tela funcionam nos controles principais.
-- [ ] Texto em 200% não corta ações essenciais.
+- [x] Fluxo de backup funciona em 360×800 e desktop no Chrome integrado; tablet também inspecionado.
+- [ ] Navegação por teclado e leitor de tela funcionam nos controles principais; ordem de foco observada, leitor de tela real pendente.
+- [ ] Texto em 200% não corta ações essenciais; teste de widget passou, zoom manual do navegador pendente.
 - [ ] Estados vazios orientam a próxima ação.
 - [ ] Ações destrutivas pedem confirmação.
-- [ ] Medir sorteio de 200 participantes em execução de release e revisar fluidez da interface; o teste automatizado atual comprova apenas que o pareamento válido termina.
-- [x] `flutter build web --release` conclui e a página abre localmente; conferência funcional visual continua pendente.
+- [x] Medir sorteio de 200 participantes em execução de release e revisar fluidez da interface; uma execução no Chrome integrado mostrou a tela em aproximadamente 1,06 s após navegação.
+- [x] `flutter build web --release` conclui e a página abre localmente; fluxos de backup e sorteio foram inspecionados no build release.
 - [x] Documentação e limitações estão atualizadas.
-- [ ] Nenhuma publicação foi feita sem autorização.
+- [x] Nenhuma publicação foi feita sem autorização.
 
 ### 8.6 Testes e comandos
 
@@ -632,7 +632,7 @@ flutter run -d chrome --web-port 8080 --release
 - verificação manual em Chrome e Edge;
 - verificação manual de teclado, leitor de tela e escala de texto.
 
-**Estado em 2026-11-03:** implementação do backup, recuperação pela tela de falha, recomendação após sorteio, validações automatizadas e build estão concluídos. A Fase 5 continua parcial até a revisão manual de arquivo no Chrome/Edge, responsividade em tablet/desktop, teclado/leitor de tela/contraste e abertura local do build.
+**Estado em 2026-11-04:** implementação do backup, recuperação pela tela de falha, recomendação após sorteio, validações automatizadas e build estão concluídos. Chrome integrado validou exportação/importação, layouts e sorteio de 200 participantes. A Fase 5 continua parcial até a revisão com leitor de tela, zoom manual em 200% e fluxo de arquivo no Edge. A exibição de emojis no redirecionamento WhatsApp também segue em investigação; nenhum envio foi feito.
 
 ### 8.7 Riscos e limitações
 

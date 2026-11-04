@@ -58,9 +58,16 @@ class DatabaseFailureApp extends StatelessWidget {
 
 /// Tela de falha ao abrir o banco local.
 class DatabaseFailurePage extends StatefulWidget {
-  const DatabaseFailurePage({super.key, required this.onRetry});
+  const DatabaseFailurePage({
+    super.key,
+    required this.onRetry,
+    this.backupFileService,
+    this.databaseOpener,
+  });
 
   final VoidCallback onRetry;
+  final BackupFileService? backupFileService;
+  final Future<Database> Function()? databaseOpener;
 
   @override
   State<DatabaseFailurePage> createState() => _DatabaseFailurePageState();
@@ -74,7 +81,8 @@ class _DatabaseFailurePageState extends State<DatabaseFailurePage> {
     setState(() => _busy = true);
     Database? database;
     try {
-      final fileService = const FilePickerBackupFileService();
+      final fileService =
+          widget.backupFileService ?? const FilePickerBackupFileService();
       final bytes = await fileService.pick(maxBytes: maxBackupBytes);
       if (!mounted || bytes == null) return;
 
@@ -87,7 +95,7 @@ class _DatabaseFailurePageState extends State<DatabaseFailurePage> {
       );
       if (!confirmed || !mounted) return;
 
-      database = await openAppDatabase();
+      database = await (widget.databaseOpener ?? openAppDatabase)();
       await BackupService(database).importDocument(document);
       await database.close();
       database = null;

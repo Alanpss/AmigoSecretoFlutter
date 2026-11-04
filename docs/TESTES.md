@@ -151,7 +151,11 @@ Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restriçõe
 
 ### 5.5 Fase 5 — Backup e acabamento
 
-**Estado parcial em 2026-11-03:** testes de serviço/widget cobrem round-trip, validação, prévia, confirmação, responsividade a 200% e atomicidade. A regressão completa passou (82 testes). Seleção/salvamento real de arquivo no Chrome/Edge, leitor de tela, foco, contraste e revisão manual em tablet/desktop ainda precisam de verificação; não registrar a fase como aceita antes disso.
+**Estado parcial em 2026-11-04:** testes de serviço/widget cobrem round-trip, validação, prévia, confirmação, responsividade a 200% e atomicidade. A regressão completa passou (87 testes). Chrome integrado exercitou a exportação e importação de arquivos fictícios em origem isolada; layouts 360×800, 768×1024 e 1280×900 foram inspecionados; a ordem de teclado foi observada e os pares principais de contraste têm teste automatizado. Leitor de tela real, zoom manual do navegador a 200% e fluxo de arquivo no Edge ainda precisam de verificação.
+
+A integração Web foi tentada em 2026-11-04. `flutter test integration_test` não seleciona dispositivo quando há vários conectados; com `-d chrome`, o comando informa que Web não é suportado. `flutter drive -d chrome --driver=test_driver/integration_test.dart --target=integration_test/app_flow_test.dart` iniciou o Chrome, mas ficou aguardando o serviço de depuração por mais de três minutos e foi interrompido. O fluxo de integração segue pendente; os 87 testes unitários/widget passaram.
+
+O teste `test/app/theme_accessibility_test.dart` verifica contraste ≥4,5:1 nos pares principais das paletas clara/escura. `test/tools/draw_performance_fixture_test.dart` gera em `%TEMP%\amigo-secreto-backup-test-200.json` um backup de demonstração com 200 nomes fictícios e um telefone fictício; o arquivo deve ser removido manualmente quando não for mais necessário para teste manual.
 
 | Caso | Tipo | Esperado |
 | --- | --- | --- |

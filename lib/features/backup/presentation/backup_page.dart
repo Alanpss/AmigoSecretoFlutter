@@ -29,8 +29,12 @@ class _BackupPageState extends ConsumerState<BackupPage> {
           .read(backupFileServiceProvider)
           .save(fileName: filename, bytes: bytes);
       if (!mounted) return;
-      if (saved == null) {
+      if (saved == BackupSaveResult.cancelled) {
         _showMessage('Exportação cancelada. Nenhum arquivo foi salvo.');
+      } else if (saved == BackupSaveResult.downloadStarted) {
+        _showMessage(
+          'Exportação iniciada. Confira os downloads do navegador e guarde o arquivo em local seguro.',
+        );
       } else {
         _showMessage('Backup exportado. Guarde o arquivo em local seguro.');
       }

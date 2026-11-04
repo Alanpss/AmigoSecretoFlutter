@@ -1,6 +1,6 @@
 # Progresso
 
-**Última atualização:** 2026-11-03
+**Última atualização:** 2026-11-04
 **Fase atual:** Fase 5 — Backup e acabamento **em andamento**
 **Próxima fase:** Nenhuma fase planejada após a Fase 5
 **Implementação:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 autorizada explicitamente
@@ -20,12 +20,12 @@ As Fases 1 a 3 estão concluídas. A implementação da Fase 5 cobre backup, rec
 | 1 — Ambiente e fundação | Concluída | Seções 6 a 9 | Nenhuma |
 | 2 — Cadastro e organização | Concluída | Critérios e verificações nas seções 16 e 17 | Nenhuma |
 | 3 — Sorteio e integridade | Aceita | Testes automatizados passaram; usuário confirmou revisão manual de teclado, foco, leitor de tela e contraste | Nenhuma |
-| 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Implementação e testes automatizados concluídos; a abertura manual do link no navegador não foi verificada | Manter a limitação documentada durante a regressão final |
-| 5 — Acabamento e backup | Parcial | Backup e regressão automatizada concluídos; verificações manuais pendentes na seção 23 | Conferir Chrome/Edge, seleção/salvamento de arquivo, tablet/desktop, teclado/leitor de tela/contraste e build aberto localmente |
+| 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Link aberto manualmente com contato fictício; nenhum envio feito. Após redirecionamento do WhatsApp, emojis apareceram como caractere de substituição; investigar antes de considerar essa experiência validada | Verificar o comportamento em navegador compatível e corrigir se reproduzível no URI gerado pelo app |
+| 5 — Acabamento e backup | Parcial | Fluxos de backup executados em navegador isolado; 200 participantes renderizados em build release; testes, análise, formatação e build aprovados. Revisão de leitor de tela e zoom do navegador ainda pendentes | Validar leitor de tela e zoom 200%; repetir arquivo em Edge; fechar a pendência visual de emojis do link da Fase 4 |
 
 ## 3. Ponto exato de retomada
 
-O usuário autorizou a Fase 5 em 2026-11-03 ao pedir a implementação da próxima fase. O click-to-chat manual da Fase 4 continua sem demonstração visual; não registrar como testado. Backup e verificações automatizadas da Fase 5 estão implementados; o próximo passo é a conferência manual descrita na seção 23. Publicação e envio real continuam fora do escopo.
+O usuário autorizou a Fase 5 em 2026-11-03 ao pedir a implementação da próxima fase. Em 2026-11-04, o navegador abriu o link click-to-chat com telefone fictício, mas a página do WhatsApp exibiu emojis como caracteres de substituição depois do redirecionamento; nenhum envio foi feito. Na Fase 5, exportação e importação foram exercitadas em origem local isolada, e foi medida a renderização do sorteio de 200 participantes. O próximo passo é a revisão manual de leitor de tela/zoom 200% e a verificação em Edge. Publicação e envio real continuam fora do escopo.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -324,11 +324,11 @@ A Fase 4 está autorizada. Seu escopo segue a seção 7 de `docs/PLANO_IMPLEMENT
 
 Em 2026-11-03, o usuário pediu para implementar a próxima fase. A Fase 5 fica autorizada e é o escopo atual. A Fase 4 foi liberada para transição por essa solicitação; sua conferência visual de click-to-chat permanece explicitamente não demonstrada e será mantida como limitação, sem afirmar que houve teste manual.
 
-## 23. Fase 5 — backup, recuperação e regressão automatizada
+## 23. Fase 5 — backup, recuperação e acabamento
 
 **Implementado:** backup JSON UTF-8 versão 1 com todos os stores, IDs/chaves preservados, limite de 10 MB, validação de esquema e relações, prévia, confirmação explícita e substituição em uma transação. Exportação sugere nome com data e não inclui dados pessoais no nome. A tela de backup avisa sobre telefones/resultados e a tela de resultado recomenda exportar. A tela de falha do banco oferece restauração de arquivo validado antes de tentar abrir novamente. Exclusão de evento agora remove sorteios, atribuições e entregas relacionadas na mesma transação para evitar referências órfãs. `.gitignore` cobre arquivos de backup. O manifesto mantém os ícones PWA existentes e descreve o app local-first.
 
-**Verificações executadas em 2026-11-03:**
+**Verificações executadas em 2026-11-03 e 2026-11-04:**
 
 | Verificação | Comando | Resultado |
 | --- | --- | --- |
@@ -341,7 +341,24 @@ Em 2026-11-03, o usuário pediu para implementar a próxima fase. A Fase 5 fica 
 | Build Web release | `flutter build web --release` | Concluído em 76,8 s; build gerado em `build/web` |
 | Execução local | `flutter run -d web-server --release --web-hostname 127.0.0.1 --web-port 8787` | Servidor release iniciado; título “Amigo Secreto” carregou no navegador integrado |
 | Artefatos servidos | GET `/`, `/manifest.json`, `/icons/Icon-maskable-512.png` em `http://127.0.0.1:8787` | Todos responderam HTTP 200; HEAD não é suportado pelo servidor Flutter |
+| Exportação Web | Chrome integrado, origem local isolada, backup vazio | Download iniciado e mensagem corrigida para orientar a conferir downloads; não foi interpretado como cancelamento |
+| Importação Web | Chrome integrado, arquivo fictício vazio e fixture com 200 participantes | Prévia validada, confirmação explícita apresentada e importação concluída |
+| Layout e navegação | Chrome integrado; 360×800, 768×1024 e 1280×900; fluxo fictício | Sem corte dos controles principais; ordem por teclado observada no grupo de semântica |
+| Sorteio em release | Chrome integrado, 1280×900, fixture de 200 participantes | Tela de sorteio disponível em aproximadamente 1,06 s após navegação; uma medição, não benchmark estatístico |
+| Link click-to-chat | Chrome integrado, telefone fictício | Abriu a página oficial `api.whatsapp.com` com telefone e texto preenchido; nenhum botão de envio foi acionado. Após o redirecionamento, emojis foram exibidos como `�` |
+| Teste automatizado de contraste | `flutter test test/app/theme_accessibility_test.dart` | Pares principais da paleta clara/escura atendem contraste 4,5:1 |
+| Restauração pela tela de falha | `flutter test test/app/database_failure_test.dart --reporter expanded` | 3 testes passaram; restauração e tentativa de reabrir exercitadas com dependências injetadas |
+| Fixture de desempenho | `flutter test test/tools/draw_performance_fixture_test.dart --reporter expanded` | 1 teste passou; gera arquivo fictício em `%TEMP%\amigo-secreto-backup-test-200.json` |
+| Formatação final | `dart format --output=none --set-exit-if-changed .` | 95 arquivos; 0 alterações |
+| Análise final | `flutter analyze` | `No issues found!` |
+| Regressão final | `flutter test` | 87 testes passaram |
+| Tentativa de integração | `flutter test integration_test` | Falhou porque há mais de um dispositivo conectado; tentativa com `-d chrome` informa que Web não é suportado por esse comando |
+| Driver de integração Web | `flutter drive -d chrome --driver=test_driver/integration_test.dart --target=integration_test/app_flow_test.dart` | Compilou/iniciou Chrome, mas ficou sem progresso após “Waiting for connection from debug service on Chrome”; interrompido após mais de 3 min. Fluxo não considerado aprovado |
+| Build Web release final | `flutter build web --release` | Concluído em 108,6 s; saída em `build/web`; aviso informativo de dry-run Wasm e tree-shaking de fontes |
+| Guia de publicação | Revisão documental | `docs/DEPLOY.md` descreve o artefato, fallback de rotas, HTTPS e verificações; nenhum provedor foi escolhido nem publicação realizada |
 
-**Ainda não verificado manualmente:** fluxo funcional visual no Chrome/Edge, seleção e salvamento de arquivo reais, restauração pela tela de falha do banco, viewport tablet/desktop, navegação por teclado, leitor de tela, contraste e tempo do sorteio de 200 pessoas. O servidor confirmou a página e os recursos PWA por HTTP, mas isso não substitui a inspeção dos fluxos. O click-to-chat da Fase 4 continua sem conferência visual. Portanto, a Fase 5 permanece **parcial**. Não foi feito deploy nem envio real.
+**Ainda não verificado manualmente:** Edge; leitor de tela real (Narrator/NVDA); zoom do navegador em 200%; teste físico de alvos de toque. O teste automatizado de contraste usa os pares principais da paleta e não substitui inspeção visual completa. A abertura do click-to-chat foi demonstrada com dado fictício, mas a exibição de emojis após o redirecionamento ficou incorreta; o URI inicial do app estava percent-encoded em UTF-8, então a origem da conversão precisa ser isolada antes de alterar a implementação. A Fase 5 permanece **parcial**. Não foi feito deploy nem envio real.
 
-**Ponto exato de retomada:** abrir localmente o build em navegador e revisar backup com arquivo fictício; então testar 360×800, tablet e desktop, teclado/leitor de tela/contraste, e registrar o navegador e os resultados. Não usar dados pessoais reais nem clicar para enviar mensagem no WhatsApp.
+**Intercorrências e impacto:** a primeira checagem de formatação detectou apenas `test/tools/draw_performance_fixture_test.dart`; o arquivo foi formatado e a checagem repetida passou. A primeira análise encontrou importações desnecessárias e um `print` no helper; todos foram removidos e a análise repetida passou. O teste de restauração usa banco Sembast em memória, cujo conteúdo se perde ao fechar; por isso o widget verifica o fluxo de restauração e retry, enquanto preservação de dados importados segue coberta pelos testes do serviço de backup. O runner de integração Web não concluiu no ambiente: `flutter test integration_test -d chrome` declara Web não suportado e `flutter drive` permaneceu aguardando a conexão do serviço de depuração; o fluxo não é contabilizado como executado.
+
+**Ponto exato de retomada:** executar revisão manual com Narrator ou NVDA, zoom do navegador a 200% e o fluxo de arquivo no Edge. Depois, investigar a conversão dos emojis no redirecionamento click-to-chat, mantendo telefone fictício e sem enviar a mensagem. Não publicar nem usar dados reais.

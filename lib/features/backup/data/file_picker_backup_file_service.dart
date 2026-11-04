@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 
 import '../domain/backup_document.dart';
 import 'backup_service.dart';
@@ -9,12 +8,19 @@ class FilePickerBackupFileService implements BackupFileService {
   const FilePickerBackupFileService();
 
   @override
-  Future<Uri?> save({required String fileName, required Uint8List bytes}) {
-    return FilePicker.saveFile(
+  Future<BackupSaveResult> save({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    final result = await FilePicker.saveFile(
       fileName: fileName,
       bytes: bytes,
       mimeType: 'application/json',
     );
+    // In download mode, the Web implementation starts a browser download and
+    // returns null because browsers do not expose the destination file path.
+    if (kIsWeb) return BackupSaveResult.downloadStarted;
+    return result == null ? BackupSaveResult.cancelled : BackupSaveResult.saved;
   }
 
   @override
