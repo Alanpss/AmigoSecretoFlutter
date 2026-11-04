@@ -1,4 +1,5 @@
 import 'package:amigo_secreto/core/database/app_database.dart';
+import 'package:amigo_secreto/core/database/stores.dart';
 import 'package:amigo_secreto/features/events/data/event_repository.dart';
 import 'package:amigo_secreto/features/events/domain/event.dart';
 import 'package:amigo_secreto/features/groups/data/group_repository.dart';
@@ -6,6 +7,7 @@ import 'package:amigo_secreto/features/groups/domain/group.dart';
 import 'package:amigo_secreto/features/participants/data/participant_repository.dart';
 import 'package:amigo_secreto/features/participants/data/person_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sembast/sembast.dart';
 
 import '../../../support/test_database.dart';
 
@@ -121,6 +123,31 @@ void main() {
       expect(await participants.getById(participant.id), isNull);
       expect(await groups.getById(group.id), isNull);
       expect(await people.getAll(), hasLength(1));
+    },
+  );
+
+  test(
+    'excluir evento remove também o histórico de sorteio e entregas',
+    () async {
+      final event = await events.create(name: 'Evento fictício');
+      await drawsStore.record('draw-fictitious').put(database.database, {
+        'id': 'draw-fictitious',
+        'eventId': event.id,
+      });
+      await assignmentsStore.record('assignment-fictitious').put(
+        database.database,
+        {'id': 'assignment-fictitious', 'drawId': 'draw-fictitious'},
+      );
+      await deliveriesStore.record('delivery-fictitious').put(
+        database.database,
+        {'id': 'delivery-fictitious', 'drawId': 'draw-fictitious'},
+      );
+
+      await events.delete(event.id);
+
+      expect(await drawsStore.find(database.database), isEmpty);
+      expect(await assignmentsStore.find(database.database), isEmpty);
+      expect(await deliveriesStore.find(database.database), isEmpty);
     },
   );
 }

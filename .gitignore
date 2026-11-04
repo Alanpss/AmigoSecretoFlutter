@@ -53,4 +53,5 @@ app.*.map.json
 *.sqlite
 *.sqlite3
 *.backup.json
+amigo-secreto-backup-*.json
 backups/

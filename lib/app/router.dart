@@ -9,6 +9,7 @@ import '../features/events/presentation/review_page.dart';
 import '../features/draw/presentation/draw_page.dart';
 import '../features/delivery/presentation/delivery_queue_page.dart';
 import '../features/delivery/presentation/message_template_page.dart';
+import '../features/backup/presentation/backup_page.dart';
 import '../features/groups/presentation/group_form_page.dart';
 import '../features/groups/presentation/group_list_page.dart';
 import '../features/participants/presentation/participant_form_page.dart';
@@ -40,6 +41,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/settings',
             builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: '/backup',
+            builder: (context, state) => const BackupPage(),
           ),
         ],
       ),

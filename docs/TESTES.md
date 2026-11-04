@@ -151,6 +151,8 @@ Ver matriz detalhada na seção 6. Os testes atuais cobrem matching, restriçõe
 
 ### 5.5 Fase 5 — Backup e acabamento
 
+**Estado parcial em 2026-11-03:** testes de serviço/widget cobrem round-trip, validação, prévia, confirmação, responsividade a 200% e atomicidade. A regressão completa passou (82 testes). Seleção/salvamento real de arquivo no Chrome/Edge, leitor de tela, foco, contraste e revisão manual em tablet/desktop ainda precisam de verificação; não registrar a fase como aceita antes disso.
+
 | Caso | Tipo | Esperado |
 | --- | --- | --- |
 | Exportar/importar | Unitário + integração | Round-trip completo |

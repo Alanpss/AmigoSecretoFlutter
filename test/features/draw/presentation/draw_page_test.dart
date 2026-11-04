@@ -66,6 +66,8 @@ void main() {
 
     await _pumpDrawPage(tester, database, eventId);
 
+    expect(find.text('Proteja uma cópia do sorteio'), findsOneWidget);
+    expect(find.text('Abrir backup'), findsOneWidget);
     expect(find.text('Resultado oculto'), findsNWidgets(3));
 
     final firstGiverId = assignment.keys.first;
@@ -148,6 +150,7 @@ void main() {
         greaterThanOrEqualTo(48),
       );
       expect(find.text('Invalidar sorteio'), findsOneWidget);
+      expect(find.text('Abrir backup'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

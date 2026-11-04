@@ -183,6 +183,16 @@ Chaves são IDs UUID em string. Consultas pequenas carregam o conjunto do evento
 - Não usar `localStorage` para dados principais.
 - Não prometer persistência eterna; documentar e avisar na interface.
 
+### 5.7 Formato do backup
+
+- JSON UTF-8 com `appId`, versão independente `schemaVersion = 1`, `exportedAt`, versão do schema do banco e todos os stores (`meta`, `people`, `events`, `participants`, `groups`, `draws`, `assignments`, `deliveries` e `settings`).
+- Cada entrada preserva a chave Sembast e o registro original; entradas são ordenadas pela chave para facilitar inspeção e testes.
+- Limite de importação e exportação: 10 MB. O nome sugerido contém somente a data (`amigo-secreto-backup-AAAA-MM-DD.json`).
+- A validação verifica versões, estrutura, IDs, relações, estados do sorteio, mensagens e telefones antes de abrir a transação de substituição.
+- Importação apaga e repõe os stores dentro de uma única transação. Falha reverte todos os writes. Providers derivados são invalidados depois do commit.
+- Um backup contém telefones e resultados, não é criptografado e nunca deve ser incluído no repositório.
+- Quando a abertura normal do banco falha, a tela inicial oferece selecionar e validar um backup; após confirmação, importa em transação e tenta abrir o app novamente. Se o próprio armazenamento estiver inacessível/corrompido, a restauração também pode falhar sem apagar automaticamente os dados.
+
 ## 6. Modelo de dados
 
 ### 6.1 Diagrama

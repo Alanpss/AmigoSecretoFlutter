@@ -18,10 +18,10 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | --- | --- | --- | --- | --- |
 | 0 | Planejar sem implementar | Documentação, decisões e ambiente mapeado | — | Concluída em 2026-11-03 |
 | 1 | Preparar ambiente e fundação | Flutter instalado, projeto Web executável, banco e navegação básicos | Fase 0 + confirmação da plataforma | Concluída em 2026-11-03 |
-| 2 | Cadastro e organização | Eventos, pessoas, participantes, responsáveis e grupos funcionando | Fase 1 | Bloqueada |
+| 2 | Cadastro e organização | Eventos, pessoas, participantes, responsáveis e grupos funcionando | Fase 1 | Aceita em 2026-11-03 |
 | 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Aceita em 2026-11-03 |
-| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Em andamento |
-| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4 | Bloqueada |
+| 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada pelo usuário para transição; click-to-chat manual não demonstrado |
+| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Em andamento |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -421,7 +421,7 @@ flutter build web --release
 
 ### 6.8 Portão de saída
 
-A Fase 3 foi aceita em 2026-11-03, após testes automatizados e verificação manual de acessibilidade confirmada pelo usuário. A Fase 4 foi iniciada com autorização explícita do usuário na mesma data; a Fase 5 continua exigindo nova autorização.
+A Fase 3 foi aceita em 2026-11-03, após testes automatizados e verificação manual de acessibilidade confirmada pelo usuário. A Fase 4 foi iniciada em seguida. Em 2026-11-03, o usuário pediu a implementação da próxima fase, autorizando a transição para a Fase 5; a revisão manual do click-to-chat da Fase 4 segue registrada como não demonstrada.
 
 ---
 
@@ -536,7 +536,7 @@ flutter build web --release
 
 ### 7.8 Portão de saída
 
-A Fase 4 é aceita quando a fila permite abrir, copiar, confirmar e retomar entregas, com estados honestos e testes passando. **A Fase 5 só começa com nova autorização.**
+A Fase 4 é aceita quando a fila permite abrir, copiar, confirmar e retomar entregas, com estados honestos e testes passando. A abertura externa no navegador não foi verificada manualmente; o usuário autorizou a transição para a Fase 5 em 2026-11-03, e essa limitação permanece registrada.
 
 ---
 
@@ -545,6 +545,8 @@ A Fase 4 é aceita quando a fila permite abrir, copiar, confirmar e retomar entr
 **Objetivo:** tornar o MVP recuperável, acessível, responsivo e pronto para uso real, sem publicar sem autorização.
 
 **Dependências:** Fase 4 aceita; decisão de hospedagem definida antes de qualquer publicação.
+
+**Autorização:** iniciada em 2026-11-03 após o usuário pedir a implementação da próxima fase. A revisão visual de click-to-chat da Fase 4 continua pendente e não será declarada como concluída.
 
 ### 8.1 Escopo incluído
 
@@ -566,17 +568,17 @@ A Fase 4 é aceita quando a fila permite abrir, copiar, confirmar e retomar entr
 
 ### 8.3 Checklist
 
-- [ ] Implementar serialização versionada de todos os stores.
-- [ ] Implementar exportação com nome de arquivo sem dados pessoais.
-- [ ] Implementar importação com limite de tamanho, validação de schema/referências e prévia.
-- [ ] Implementar substituição atômica e reabertura dos providers.
-- [ ] Implementar avisos de backup sensível.
+- [x] Implementar serialização versionada de todos os stores.
+- [x] Implementar exportação com nome de arquivo sem dados pessoais.
+- [x] Implementar importação com limite de tamanho, validação de schema/referências e prévia.
+- [x] Implementar substituição atômica e reabertura dos providers.
+- [x] Implementar avisos de backup sensível após o sorteio e durante a importação.
 - [ ] Revisar layout em 360×800, tablet e desktop.
 - [ ] Revisar foco, semântica, contraste, toque e escala de texto.
 - [ ] Revisar estados vazios e textos em pt-BR.
-- [ ] Executar regressão completa e teste de desempenho.
-- [ ] Configurar manifesto/ícones PWA e build release.
-- [ ] Atualizar README, PROGRESSO, AMBIENTE, TESTES e limitações.
+- [x] Executar regressão automatizada completa; o teste existente cobre sorteio com 200 participantes.
+- [x] Configurar manifesto/ícones PWA e gerar build release.
+- [x] Atualizar README, PROGRESSO, AMBIENTE, TESTES e limitações.
 - [ ] Preparar instruções de publicação sem executá-las.
 
 ### 8.4 Arquivos e módulos previstos
@@ -595,19 +597,19 @@ docs/...
 
 ### 8.5 Critérios de aceite observáveis
 
-- [ ] Exportar gera JSON com versão, metadados e todos os dados.
-- [ ] Importar backup válido mostra prévia e substitui os dados após confirmação.
-- [ ] Backup inválido é rejeitado sem alterar a base atual.
-- [ ] Após importar, sorteio ativo e entregas são restaurados.
-- [ ] O app avisa que o arquivo contém telefones e resultados.
+- [x] Exportar gera JSON com versão, metadados e todos os dados.
+- [x] Importar backup válido mostra prévia e substitui os dados após confirmação.
+- [x] Backup inválido é rejeitado sem alterar a base atual.
+- [x] Após importar, sorteio ativo e entregas são restaurados.
+- [x] O app avisa que o arquivo contém telefones e resultados.
 - [ ] Fluxo completo funciona em 360×800 e em desktop.
 - [ ] Navegação por teclado e leitor de tela funcionam nos controles principais.
 - [ ] Texto em 200% não corta ações essenciais.
 - [ ] Estados vazios orientam a próxima ação.
 - [ ] Ações destrutivas pedem confirmação.
-- [ ] 200 participantes ativos são sorteados em tempo aceitável, sem travar a interface.
-- [ ] `flutter build web --release` conclui e o artefato abre localmente.
-- [ ] Documentação e limitações estão atualizadas.
+- [ ] Medir sorteio de 200 participantes em execução de release e revisar fluidez da interface; o teste automatizado atual comprova apenas que o pareamento válido termina.
+- [x] `flutter build web --release` conclui e a página abre localmente; conferência funcional visual continua pendente.
+- [x] Documentação e limitações estão atualizadas.
 - [ ] Nenhuma publicação foi feita sem autorização.
 
 ### 8.6 Testes e comandos
@@ -629,6 +631,8 @@ flutter run -d chrome --web-port 8080 --release
 - regressão de todas as fases;
 - verificação manual em Chrome e Edge;
 - verificação manual de teclado, leitor de tela e escala de texto.
+
+**Estado em 2026-11-03:** implementação do backup, recuperação pela tela de falha, recomendação após sorteio, validações automatizadas e build estão concluídos. A Fase 5 continua parcial até a revisão manual de arquivo no Chrome/Edge, responsividade em tablet/desktop, teclado/leitor de tela/contraste e abertura local do build.
 
 ### 8.7 Riscos e limitações
 

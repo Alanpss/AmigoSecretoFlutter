@@ -22,7 +22,10 @@ class AppShell extends StatelessWidget {
     ),
   ];
 
-  int get _selectedIndex => location.startsWith('/settings') ? 1 : 0;
+  int get _selectedIndex =>
+      location.startsWith('/settings') || location.startsWith('/backup')
+      ? 1
+      : 0;
 
   void _select(BuildContext context, int index) {
     context.go(index == 1 ? '/settings' : '/');

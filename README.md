@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–3 aceitas; Fase 4 (WhatsApp e acompanhamento das entregas) em implementação. Backup pertence à Fase 5 e ainda não foi iniciado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
+> **Estado:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 parcialmente implementada. Backup versionado e regressão automatizada estão prontos; conferências manuais de navegador e acessibilidade ainda faltam. A abertura do link do WhatsApp também segue sem verificação visual. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
 
 ## Descrição para o GitHub
 
@@ -24,11 +24,13 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 - Resultados ocultos por padrão, com revelação individual.
 - Editor de modelo com variáveis validadas e prévia com dados fictícios.
 - Fila de entregas com cópia, link `wa.me`, confirmação manual e filtro de pendências; a abertura é testada com launcher simulado.
+- Exportação e importação de backup JSON versionado, com prévia, validação de referências e substituição transacional.
+- Aviso para exportar após o sorteio e atalho para backup; a tela de falha do banco também oferece restauração de um arquivo validado.
 
 ### Ainda no plano
 
 - Revisão manual no navegador da fila e da abertura do link `wa.me`; nenhum envio deve ser feito durante essa verificação.
-- Exportação e importação de backup JSON (Fase 5).
+- Revisão final de responsividade, acessibilidade e fluxos nos navegadores-alvo (Fase 5).
 
 O plano completo e os critérios de aceite estão em [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md).
 
@@ -101,6 +103,7 @@ lib/
     draw/          matching, persistência e apresentação do sorteio
     delivery/      modelos, links e acompanhamento manual das entregas
     settings/      configurações
+    backup/        serialização, validação, arquivos e restauração
   shared/          layout e widgets reutilizáveis
 test/              testes de domínio, dados e interface
 docs/              contexto, requisitos, arquitetura, plano e progresso
@@ -135,7 +138,7 @@ O aplicativo **não usa IA durante a execução**. Ferramentas de IA são usadas
 
 - Os dados do Web ficam localmente no navegador; não há backend, login ou sincronização.
 - O armazenamento Web não é criptografado. Limpar os dados do navegador ou mudar de origem pode remover o acesso aos eventos.
-- Telefones, responsáveis e resultados são dados pessoais. Use dados fictícios em desenvolvimento e exporte backups apenas para locais seguros quando o recurso estiver disponível.
+- Telefones, responsáveis e resultados são dados pessoais. Use dados fictícios em desenvolvimento e guarde backups não criptografados em locais seguros.
 - Abrir o WhatsApp não comprova envio, entrega ou leitura. O projeto não automatiza o WhatsApp.
 
 ## Licença

@@ -84,6 +84,34 @@ class _DrawPageState extends ConsumerState<DrawPage> {
                     'O resultado está salvo. Revele cada pessoa individualmente.',
                   ),
                   const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Proteja uma cópia do sorteio',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Um backup guarda telefones e resultados. Exporte o arquivo e mantenha-o em local seguro para recuperar os dados se o armazenamento do navegador for perdido.',
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () => context.go('/backup'),
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(0, 48),
+                            ),
+                            icon: const Icon(Icons.backup_outlined),
+                            label: const Text('Abrir backup'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   ...persisted.assignments.map((assignment) {
                     final giverName =
                         nameById[assignment.giverParticipantId] ??

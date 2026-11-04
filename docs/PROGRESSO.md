@@ -1,16 +1,16 @@
 # Progresso
 
 **Última atualização:** 2026-11-03
-**Fase atual:** Fase 4 — WhatsApp e entregas **em andamento**
-**Próxima fase:** Fase 5 — Backup e acabamento **não autorizada**
-**Implementação:** Fase 3 aceita pelo usuário; Fase 4 iniciada por autorização explícita
+**Fase atual:** Fase 5 — Backup e acabamento **em andamento**
+**Próxima fase:** Nenhuma fase planejada após a Fase 5
+**Implementação:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 autorizada explicitamente
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
 
 Este documento é a fonte de verdade para o **estado real do trabalho** e para o ponto exato de retomada. Em caso de divergência com outros documentos, vale o que está registrado aqui; o conflito deve ser resolvido antes de continuar.
 
 ## 1. Situação em uma frase
 
-As Fases 1 a 3 estão concluídas. A Fase 4 está autorizada e começou; mensagens, links oficiais do WhatsApp e acompanhamento manual das entregas são o escopo ativo.
+As Fases 1 a 3 estão concluídas. A implementação da Fase 5 cobre backup, recuperação, aviso após sorteio e regressão automatizada; ainda faltam conferências manuais de navegador e acessibilidade. O click-to-chat manual da Fase 4 também segue não demonstrado.
 
 ## 2. Situação por fase
 
@@ -20,12 +20,12 @@ As Fases 1 a 3 estão concluídas. A Fase 4 está autorizada e começou; mensage
 | 1 — Ambiente e fundação | Concluída | Seções 6 a 9 | Nenhuma |
 | 2 — Cadastro e organização | Concluída | Critérios e verificações nas seções 16 e 17 | Nenhuma |
 | 3 — Sorteio e integridade | Aceita | Testes automatizados passaram; usuário confirmou revisão manual de teclado, foco, leitor de tela e contraste | Nenhuma |
-| 4 — WhatsApp e entregas | Em andamento | Domínio, persistência, editor, fila e testes automatizados implementados | Verificação manual no navegador da abertura do link e revisão dos fluxos responsivos |
-| 5 — Acabamento e backup | Não iniciada | Depende da Fase 4 | Aguardar |
+| 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Implementação e testes automatizados concluídos; a abertura manual do link no navegador não foi verificada | Manter a limitação documentada durante a regressão final |
+| 5 — Acabamento e backup | Parcial | Backup e regressão automatizada concluídos; verificações manuais pendentes na seção 23 | Conferir Chrome/Edge, seleção/salvamento de arquivo, tablet/desktop, teclado/leitor de tela/contraste e build aberto localmente |
 
 ## 3. Ponto exato de retomada
 
-As Fases 1 a 3 foram aceitas. A Fase 4 foi autorizada pelo usuário em 2026-11-03. Modelo, links, snapshots, fila e testes automatizados já foram implementados. O próximo passo é verificar a experiência no navegador, incluindo a abertura do link usando apenas dados fictícios, sem tocar em Enviar. Não iniciar backup, publicação ou envio real.
+O usuário autorizou a Fase 5 em 2026-11-03 ao pedir a implementação da próxima fase. O click-to-chat manual da Fase 4 continua sem demonstração visual; não registrar como testado. Backup e verificações automatizadas da Fase 5 estão implementados; o próximo passo é a conferência manual descrita na seção 23. Publicação e envio real continuam fora do escopo.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -319,3 +319,29 @@ A Fase 4 está autorizada. Seu escopo segue a seção 7 de `docs/PLANO_IMPLEMENT
 **Cobertura acrescentada:** sucesso/falha do launcher fake, status aberto sem confirmação, cópia sem alterar status, filtro de pendentes, confirmação manual sem telefone, telefone/link/modelo e atualização transacional somente de pendentes. Um teste do repositório de sorteio verifica entregas e mensagens individuais para três participantes que compartilham o mesmo responsável.
 
 **Pendente:** verificar visualmente editor e fila no Chrome/Edge em viewport compacto e desktop; testar que o link abre o destino com texto preenchido usando somente telefone fictício, sem enviar a mensagem; conferir cópia e navegação. A tentativa de automação do navegador foi interrompida antes de interagir porque não foi possível identificar com segurança a URL da aba já aberta; nenhum dado foi inserido e nenhuma conversa foi aberta. O teste de integração Web continua pendente pela limitação de Chromedriver já registrada na seção 18. A Fase 4 permanece parcial e a Fase 5 não foi iniciada nem autorizada.
+
+## 22. Autorização da Fase 5
+
+Em 2026-11-03, o usuário pediu para implementar a próxima fase. A Fase 5 fica autorizada e é o escopo atual. A Fase 4 foi liberada para transição por essa solicitação; sua conferência visual de click-to-chat permanece explicitamente não demonstrada e será mantida como limitação, sem afirmar que houve teste manual.
+
+## 23. Fase 5 — backup, recuperação e regressão automatizada
+
+**Implementado:** backup JSON UTF-8 versão 1 com todos os stores, IDs/chaves preservados, limite de 10 MB, validação de esquema e relações, prévia, confirmação explícita e substituição em uma transação. Exportação sugere nome com data e não inclui dados pessoais no nome. A tela de backup avisa sobre telefones/resultados e a tela de resultado recomenda exportar. A tela de falha do banco oferece restauração de arquivo validado antes de tentar abrir novamente. Exclusão de evento agora remove sorteios, atribuições e entregas relacionadas na mesma transação para evitar referências órfãs. `.gitignore` cobre arquivos de backup. O manifesto mantém os ícones PWA existentes e descreve o app local-first.
+
+**Verificações executadas em 2026-11-03:**
+
+| Verificação | Comando | Resultado |
+| --- | --- | --- |
+| Dependências | `flutter pub get` | Concluído; `file_picker 13.3.2` e `file_picker_web 4.2.0` resolvidos |
+| Formatação final | `dart format --output=none --set-exit-if-changed .` | 93 arquivos; 0 alterações |
+| Análise | `flutter analyze` | `No issues found!` |
+| Testes focados | `flutter test test/features/backup test/features/events/data/event_repository_test.dart` | 13 testes passaram |
+| Regressão completa | `flutter test` | 82 testes passaram |
+| Desempenho do sorteio | Teste `sorteia 200 participantes ativos` em `test/features/draw/domain/draw_engine_test.dart` | Pareamento válido de 200 pessoas; duração isolada ainda não medida, então o critério de desempenho permanece pendente |
+| Build Web release | `flutter build web --release` | Concluído em 76,8 s; build gerado em `build/web` |
+| Execução local | `flutter run -d web-server --release --web-hostname 127.0.0.1 --web-port 8787` | Servidor release iniciado; título “Amigo Secreto” carregou no navegador integrado |
+| Artefatos servidos | GET `/`, `/manifest.json`, `/icons/Icon-maskable-512.png` em `http://127.0.0.1:8787` | Todos responderam HTTP 200; HEAD não é suportado pelo servidor Flutter |
+
+**Ainda não verificado manualmente:** fluxo funcional visual no Chrome/Edge, seleção e salvamento de arquivo reais, restauração pela tela de falha do banco, viewport tablet/desktop, navegação por teclado, leitor de tela, contraste e tempo do sorteio de 200 pessoas. O servidor confirmou a página e os recursos PWA por HTTP, mas isso não substitui a inspeção dos fluxos. O click-to-chat da Fase 4 continua sem conferência visual. Portanto, a Fase 5 permanece **parcial**. Não foi feito deploy nem envio real.
+
+**Ponto exato de retomada:** abrir localmente o build em navegador e revisar backup com arquivo fictício; então testar 360×800, tablet e desktop, teclado/leitor de tela/contraste, e registrar o navegador e os resultados. Não usar dados pessoais reais nem clicar para enviar mensagem no WhatsApp.

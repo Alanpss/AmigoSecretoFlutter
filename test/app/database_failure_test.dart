@@ -11,6 +11,7 @@ void main() {
     expect(find.text('Não foi possível abrir os dados'), findsOneWidget);
     expect(find.textContaining('Nada foi apagado'), findsOneWidget);
     expect(find.text('Tentar novamente'), findsOneWidget);
+    expect(find.text('Restaurar backup'), findsOneWidget);
   });
 
   testWidgets('permite tentar novamente', (tester) async {

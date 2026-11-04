@@ -174,6 +174,28 @@ class EventRepository {
         await groupsStore.record(group.key).delete(txn);
       }
 
+      final draws = await drawsStore.find(
+        txn,
+        finder: Finder(filter: Filter.equals('eventId', id)),
+      );
+      for (final draw in draws) {
+        final assignments = await assignmentsStore.find(
+          txn,
+          finder: Finder(filter: Filter.equals('drawId', draw.key)),
+        );
+        for (final assignment in assignments) {
+          await assignmentsStore.record(assignment.key).delete(txn);
+        }
+        final deliveries = await deliveriesStore.find(
+          txn,
+          finder: Finder(filter: Filter.equals('drawId', draw.key)),
+        );
+        for (final delivery in deliveries) {
+          await deliveriesStore.record(delivery.key).delete(txn);
+        }
+        await drawsStore.record(draw.key).delete(txn);
+      }
+
       await eventsStore.record(id).delete(txn);
     });
   }

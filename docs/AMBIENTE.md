@@ -83,6 +83,8 @@ Observações:
 
 **Fase 4, 2026-11-03:** `url_launcher: ^6.3.3` foi adicionado ao `pubspec.yaml`; `flutter pub get` resolveu `url_launcher 6.3.3` e seus implementadores de plataforma. O launcher usa `LaunchMode.externalApplication`; widgets e testes injetam um fake e não abrem o WhatsApp real.
 
+**Fase 5, 2026-11-03:** `file_picker: ^13.3.2` foi adicionado e resolvido (`file_picker 13.3.2`, `file_picker_web 4.2.0` e implementações das plataformas disponíveis). A API v13 usa `FilePicker.pickFile()`/`PlatformFile.readAsBytes()` para importar e `FilePicker.saveFile(fileName:, bytes:, mimeType:)` para exportar. Confira o changelog oficial antes de atualizar a versão principal.
+
 ## 4. Instalação do Flutter no escopo do usuário
 
 **Pré-requisito:** autorização explícita para a Fase 1.

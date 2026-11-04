@@ -12,6 +12,8 @@ import '../features/draw/data/draw_records.dart';
 import '../features/draw/domain/draw_engine.dart';
 import '../features/delivery/data/delivery_repository.dart';
 import '../features/delivery/presentation/whatsapp_launcher.dart';
+import '../features/backup/data/backup_service.dart';
+import '../features/backup/data/file_picker_backup_file_service.dart';
 import '../features/groups/data/group_repository.dart';
 import '../features/groups/domain/group.dart';
 import '../features/participants/data/participant_repository.dart';
@@ -55,6 +57,14 @@ final deliveryRepositoryProvider = Provider<DeliveryRepository>((ref) {
 
 final whatsAppLauncherProvider = Provider<WhatsAppLauncher>(
   (ref) => const UrlLauncherWhatsAppLauncher(),
+);
+
+final backupServiceProvider = Provider<BackupService>(
+  (ref) => BackupService(ref.watch(appDatabaseProvider).database),
+);
+
+final backupFileServiceProvider = Provider<BackupFileService>(
+  (ref) => const FilePickerBackupFileService(),
 );
 
 final drawEngineProvider = Provider<DrawEngine>((ref) => const DrawEngine());
@@ -225,4 +235,19 @@ void refreshEvent(WidgetRef ref, String eventId) {
 void refreshEvents(WidgetRef ref) {
   ref.invalidate(eventsProvider);
   ref.invalidate(peopleProvider);
+}
+
+/// Invalida dados derivados após uma restauração que substitui todos os stores.
+void refreshAllData(WidgetRef ref) {
+  ref.invalidate(eventsProvider);
+  ref.invalidate(eventProvider);
+  ref.invalidate(eventOverviewProvider);
+  ref.invalidate(peopleProvider);
+  ref.invalidate(participantsProvider);
+  ref.invalidate(groupsProvider);
+  ref.invalidate(groupProvider);
+  ref.invalidate(reviewProvider);
+  ref.invalidate(drawPreparationProvider);
+  ref.invalidate(activeDrawProvider);
+  ref.invalidate(activeDeliveriesProvider);
 }
