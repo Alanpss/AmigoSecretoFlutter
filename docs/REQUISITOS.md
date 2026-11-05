@@ -134,7 +134,20 @@ Convenções: **DEVE** é obrigatório; **NÃO DEVE** é proibido; **PODE** é o
 - **RF-UX-07:** o app DEVE suportar escala de texto, contraste adequado e navegação por teclado na Web.
 - **RF-UX-08:** o app NÃO DEVE depender apenas de cor para indicar estado.
 - **RF-UX-09:** resultados DEVEM ficar ocultos por padrão e ser revelados individualmente.
-- **RF-UX-10:** o app DEVE deixar explícito que o organizador pode ver todos os resultados e que responsáveis conhecem os resultados recebidos.
+- **RF-UX-10:** no modo local, o app DEVE deixar explícito que o organizador pode ver todos os resultados. No modo online, deve explicar que a tela do organizador não mostra os pares e que responsáveis/convidados conhecem o resultado que recebem.
+
+### 2.9 Modo online — Fase 6
+
+- **RF-ONL-01:** evento local e evento online DEVEM permanecer modos explícitos e separados; eventos locais existentes não serão migrados automaticamente.
+- **RF-ONL-02:** o sorteio online DEVE ser calculado e persistido no serviço Dart usando o mesmo motor puro do app.
+- **RF-ONL-03:** endpoints do organizador DEVEM exigir Firebase Authentication Google e validar que a conta é dona do evento.
+- **RF-ONL-04:** nenhuma resposta/tela da área do organizador pode conter o nome ou ID de quem cada participante tirou.
+- **RF-ONL-05:** cada link bearer DEVE revelar somente um resultado, admitir reabertura e poder ser revogado; tokens inválidos/revogados não revelam dados.
+- **RF-ONL-06:** Firestore não pode ser acessado diretamente pelo cliente; somente o serviço autorizado acessa os dados privados.
+- **RF-ONL-07:** mensagens de prévia, logs, analytics e cabeçalho Referer não podem conter tokens ou resultados.
+- **RF-ONL-08:** botão WhatsApp pré-preenche somente o link; o organizador confirma o envio manualmente e a aplicação não envia automaticamente.
+- **RF-ONL-09:** backup local não inclui nem exporta resultados ou links de eventos online.
+- **RF-ONL-10:** interface informa que qualquer pessoa que obtiver um link pode abrir aquele resultado.
 
 ## 3. Regras de negócio detalhadas
 

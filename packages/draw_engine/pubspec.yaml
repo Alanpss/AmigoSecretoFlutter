@@ -1,0 +1,8 @@
+name: draw_engine
+description: Pure Dart secret-santa matching engine shared by the Flutter app and server.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.7
+

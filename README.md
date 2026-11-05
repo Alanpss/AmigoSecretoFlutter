@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 parcialmente implementada. Backup, regressão automatizada e fluxos no Chrome com dados fictícios foram verificados. Ainda faltam leitor de tela, zoom manual a 200% e fluxo de arquivo no Edge. No link do WhatsApp, emojis apareceram como caracteres de substituição após o redirecionamento, pendente de investigação. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
+> **Estado:** Fases 1–5 aceitas pelo usuário; a Fase 6, sorteio online com links individuais, está em andamento. O app local segue disponível; começou a extração do motor de sorteio para uso compartilhado com um futuro serviço Dart. Ainda não há autenticação, Firestore ou publicação. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atualizado.
 
 ## Descrição para o GitHub
 
@@ -10,7 +10,7 @@ Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participan
 
 ## Sobre o projeto
 
-O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil, sem backend ou sincronização entre dispositivos.
+O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil. O modo local não usa backend; um modo online separado está em desenvolvimento.
 
 O projeto dá atenção especial à integridade do sorteio: restrições de grupos não são removidas silenciosamente, os resultados são persistidos antes de qualquer etapa de envio e ficam ocultos até a revelação individual.
 
@@ -27,10 +27,10 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 - Exportação e importação de backup JSON versionado, com prévia, validação de referências e substituição transacional.
 - Aviso para exportar após o sorteio e atalho para backup; a tela de falha do banco também oferece restauração de um arquivo validado.
 
-### Ainda no plano
+### Em desenvolvimento
 
+- Modo de evento online com sorteio no servidor e um link de resultado por participante (Fase 6).
 - Investigar emojis exibidos como caracteres de substituição após o redirecionamento do link `wa.me`; nenhum envio real foi feito.
-- Revisão final de responsividade, acessibilidade e fluxos nos navegadores-alvo (Fase 5).
 
 O plano completo e os critérios de aceite estão em [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md).
 
@@ -100,16 +100,18 @@ lib/
     events/        eventos e revisão
     participants/  pessoas, participantes e responsáveis
     groups/        grupos e restrições
-    draw/          matching, persistência e apresentação do sorteio
+    draw/          matching compartilhado, persistência e apresentação do sorteio
     delivery/      modelos, links e acompanhamento manual das entregas
     settings/      configurações
     backup/        serialização, validação, arquivos e restauração
   shared/          layout e widgets reutilizáveis
 test/              testes de domínio, dados e interface
-docs/              contexto, requisitos, arquitetura, plano e progresso
+docs/                 contexto, requisitos, arquitetura, plano e progresso
+packages/draw_engine/ motor de sorteio Dart puro compartilhado
+server/               domínio inicial do serviço online em Dart
 ```
 
-**Tecnologias principais:** Flutter/Dart, Riverpod, `go_router` e Sembast; IndexedDB é usado para persistência no Web. As versões resolvidas estão em `pubspec.lock`.
+**Tecnologias principais:** Flutter/Dart, Riverpod, `go_router` e Sembast; IndexedDB é usado para persistência local no Web. O pacote Dart puro do sorteio é compartilhado com `server/`. Autenticação e persistência online ainda não estão implementadas. As versões resolvidas estão nos arquivos `pubspec.lock` correspondentes.
 
 ## Desenvolvimento assistido por IA
 
@@ -137,7 +139,7 @@ O aplicativo **não usa IA durante a execução**. Ferramentas de IA são usadas
 
 ## Privacidade e limitações
 
-- Os dados do Web ficam localmente no navegador; não há backend, login ou sincronização.
+- Eventos locais ficam no navegador. O modo online ainda está em desenvolvimento e tratará os dados em servidor.
 - O armazenamento Web não é criptografado. Limpar os dados do navegador ou mudar de origem pode remover o acesso aos eventos.
 - Telefones, responsáveis e resultados são dados pessoais. Use dados fictícios em desenvolvimento e guarde backups não criptografados em locais seguros.
 - Abrir o WhatsApp não comprova envio, entrega ou leitura. O projeto não automatiza o WhatsApp.

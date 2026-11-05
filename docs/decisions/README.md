@@ -11,6 +11,7 @@ Registros das decisões técnicas relevantes. Um ADR explica **contexto, alterna
 | [ADR-003](ADR-003-algoritmo-sorteio.md) | Algoritmo de sorteio | Aceito | 2026-11-03 | Matching máximo + amostragem uniforme por caminhos alternados |
 | [ADR-004](ADR-004-envio-whatsapp.md) | Envio pelo WhatsApp | Aceito | 2026-11-03 | Link universal `wa.me`, confirmação manual, sem automação |
 | [ADR-005](ADR-005-pessoa-e-participante.md) | Pessoa e participante | Aceito | 2026-11-03 | Pessoa reutilizável + participação por evento |
+| [ADR-006](ADR-006-sorteio-online.md) | Sorteio online com links individuais | Aceito | 2026-11-05 | Modo online separado, serviço Dart e links bearer por participante |
 
 ## Convenções
 

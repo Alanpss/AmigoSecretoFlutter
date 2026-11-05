@@ -429,3 +429,19 @@ Uma funcionalidade só é considerada testada quando:
 - testes de segurança ofensiva;
 - testes de acessibilidade certificados;
 - compatibilidade com navegadores antigos.
+
+## 17. Fase 6 — sorteio online
+
+O serviço `server/` usa `dart test` e a suíte Flutter continua sendo executada na raiz. Testes obrigatórios para concluir a fase:
+
+- motor compartilhado conserva invariantes e restrições;
+- serviço persiste somente hash SHA-256 do token e não expõe `receiverId` ou `receiverName` no DTO do organizador;
+- links diferentes retornam somente seu resultado correspondente; token inválido e revogado não retornam dados;
+- IDs/participantes inconsistentes, sorteio impossível e restrições de grupos são rejeitados sem salvar parcial;
+- persistência Firestore é idempotente, respeita `pairingRevision` e evita dois sorteios ativos;
+- endpoints negam acesso anônimo e evento alheio; endpoints públicos não revelam outros resultados;
+- Firebase Emulator cobre regras, transações e fluxo ponta a ponta com dados fictícios;
+- 200 participantes online respeitam o mesmo motor e invariantes;
+- UI verifica que a lista do organizador não recebe pares e WhatsApp contém somente links;
+- revogação invalida o link sem expor resultado;
+- nenhum serviço real ou mensagem WhatsApp é usado em testes.

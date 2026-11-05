@@ -5,7 +5,6 @@ import 'package:amigo_secreto/core/database/app_database.dart';
 import 'package:amigo_secreto/features/draw/data/draw_records.dart';
 import 'package:amigo_secreto/features/draw/data/draw_repository.dart';
 import 'package:amigo_secreto/features/draw/domain/draw_engine.dart';
-import 'package:amigo_secreto/features/draw/domain/draw_models.dart';
 import 'package:amigo_secreto/features/draw/presentation/draw_page.dart';
 import 'package:amigo_secreto/features/events/data/event_repository.dart';
 import 'package:amigo_secreto/features/participants/data/participant_view.dart';

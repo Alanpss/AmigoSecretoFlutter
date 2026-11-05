@@ -1,16 +1,16 @@
 # Progresso
 
-**Última atualização:** 2026-11-04
-**Fase atual:** Fase 5 — Backup e acabamento **em andamento**
-**Próxima fase:** Nenhuma fase planejada após a Fase 5
-**Implementação:** Fases 1–3 aceitas; Fase 4 liberada pelo usuário para transição; Fase 5 autorizada explicitamente
+**Última atualização:** 2026-11-05
+**Fase atual:** Fase 6 — Sorteio online com links individuais **em andamento**
+**Próxima fase:** A definir após a Fase 6
+**Implementação:** Fases 1–4 aceitas/liberadas; Fase 5 aceita pelo usuário em 2026-11-05 com revisão manual confirmada; Fase 6 autorizada explicitamente pelo usuário em 2026-11-05
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
 
 Este documento é a fonte de verdade para o **estado real do trabalho** e para o ponto exato de retomada. Em caso de divergência com outros documentos, vale o que está registrado aqui; o conflito deve ser resolvido antes de continuar.
 
 ## 1. Situação em uma frase
 
-As Fases 1 a 3 estão concluídas. A implementação da Fase 5 cobre backup, recuperação, aviso após sorteio e regressão automatizada; ainda faltam conferências manuais de navegador e acessibilidade. O click-to-chat manual da Fase 4 também segue não demonstrado.
+As Fases 1 a 5 estão aceitas, com as limitações de verificação manual descritas abaixo. A Fase 6 foi autorizada: criar o modo online com sorteio no servidor e revelação por links individuais. A primeira entrega extraiu o motor Dart puro e adicionou a camada inicial do serviço de domínio.
 
 ## 2. Situação por fase
 
@@ -21,11 +21,12 @@ As Fases 1 a 3 estão concluídas. A implementação da Fase 5 cobre backup, rec
 | 2 — Cadastro e organização | Concluída | Critérios e verificações nas seções 16 e 17 | Nenhuma |
 | 3 — Sorteio e integridade | Aceita | Testes automatizados passaram; usuário confirmou revisão manual de teclado, foco, leitor de tela e contraste | Nenhuma |
 | 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Link aberto manualmente com contato fictício; nenhum envio feito. Após redirecionamento do WhatsApp, emojis apareceram como caractere de substituição; investigar antes de considerar essa experiência validada | Verificar o comportamento em navegador compatível e corrigir se reproduzível no URI gerado pelo app |
-| 5 — Acabamento e backup | Parcial | Fluxos de backup executados em navegador isolado; 200 participantes renderizados em build release; testes, análise, formatação e build aprovados. Revisão de leitor de tela e zoom do navegador ainda pendentes | Validar leitor de tela e zoom 200%; repetir arquivo em Edge; fechar a pendência visual de emojis do link da Fase 4 |
+| 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
+| 6 — Sorteio online e links individuais | Em andamento, autorizada em 2026-11-05 | Motor Dart compartilhado e serviço de domínio com links bearer/revogação; testes passaram | Implementar API HTTP, autenticação Google e adaptador Firestore local via Emulator |
 
 ## 3. Ponto exato de retomada
 
-O usuário autorizou a Fase 5 em 2026-11-03 ao pedir a implementação da próxima fase. Em 2026-11-04, o navegador abriu o link click-to-chat com telefone fictício, mas a página do WhatsApp exibiu emojis como caracteres de substituição depois do redirecionamento; nenhum envio foi feito. Na Fase 5, exportação e importação foram exercitadas em origem local isolada, e foi medida a renderização do sorteio de 200 participantes. O próximo passo é a revisão manual de leitor de tela/zoom 200% e a verificação em Edge. Publicação e envio real continuam fora do escopo.
+O usuário autorizou a Fase 5 em 2026-11-03 e aceitou seu resultado em 2026-11-05. Em 2026-11-04, o navegador abriu o link click-to-chat com telefone fictício, mas a página do WhatsApp exibiu emojis como caracteres de substituição depois do redirecionamento; nenhum envio foi feito. Publicação e envio real continuam fora do escopo.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -361,4 +362,46 @@ Em 2026-11-03, o usuário pediu para implementar a próxima fase. A Fase 5 fica 
 
 **Intercorrências e impacto:** a primeira checagem de formatação detectou apenas `test/tools/draw_performance_fixture_test.dart`; o arquivo foi formatado e a checagem repetida passou. A primeira análise encontrou importações desnecessárias e um `print` no helper; todos foram removidos e a análise repetida passou. O teste de restauração usa banco Sembast em memória, cujo conteúdo se perde ao fechar; por isso o widget verifica o fluxo de restauração e retry, enquanto preservação de dados importados segue coberta pelos testes do serviço de backup. O runner de integração Web não concluiu no ambiente: `flutter test integration_test -d chrome` declara Web não suportado e `flutter drive` permaneceu aguardando a conexão do serviço de depuração; o fluxo não é contabilizado como executado.
 
-**Ponto exato de retomada:** executar revisão manual com Narrator ou NVDA, zoom do navegador a 200% e o fluxo de arquivo no Edge. Depois, investigar a conversão dos emojis no redirecionamento click-to-chat, mantendo telefone fictício e sem enviar a mensagem. Não publicar nem usar dados reais.
+**Ponto exato de retomada:** Fase 5 aceita pelo usuário em 2026-11-05; suas limitações de verificação independente estão registradas abaixo. Continuação ativa na Fase 6.
+
+## 24. Continuação da revisão da Fase 5 — 2026-11-05
+
+**Verificações desta sessão:** `flutter devices` detectou Windows, Chrome e Edge. `flutter test test/tools/draw_performance_fixture_test.dart --reporter expanded` passou (1 teste; fixture exclusivamente fictícia). `flutter run -d web-server --release --web-hostname 127.0.0.1 --web-port 8793` compilou o app; a tela vazia foi inspecionada em viewport 360×800 e os controles e textos permaneceram visíveis, sem corte aparente. O servidor temporário foi encerrado.
+
+**Limitação de evidência:** `flutter run -d edge --release --web-port 8794` compilou, mas falhou ao iniciar o Edge após três tentativas. A tentativa de revisão com automação do computador foi interrompida antes de navegar para o app no Edge. A tecla de zoom não produziu uma mudança observável no navegador integrado; portanto, zoom manual em 200% não foi verificado pelo agente. O Narrator está instalado (`C:\Windows\system32\Narrator.exe`), mas não foi executado. Em seguida, o usuário informou “tudo certo” e autorizou encerrar F5 e iniciar F6; registramos o aceite do usuário, sem transformar as limitações do agente em testes executados.
+
+**Próximo passo histórico:** retomar as limitações acima se for necessária uma comprovação independente em Edge, leitor de tela ou zoom manual.
+
+**Tentativa no Chrome em 2026-11-05:** `flutter run -d chrome --release --web-port 8795` compilou o app e abriu a janela “Amigo Secreto - Google Chrome”. A automação não conseguiu determinar a URL atual da janela no Windows; backup, zoom e leitor de tela não foram verificados pelo agente nessa tentativa. Depois, o usuário confirmou a revisão e aceitou a Fase 5. A origem local usou armazenamento novo e não recebeu dados reais.
+
+## 25. Autorização e início da Fase 6 — 2026-11-05
+
+O usuário autorizou encerrar a Fase 5 e iniciar a próxima fase após abrir o app no Chrome em `http://localhost:8795/#/settings`, informando “tudo certo”. Registramos o aceite do usuário. Limitação de evidência: a automação não conseguiu inspecionar a janela Chrome, nem validar independentemente Edge, Narrator ou zoom manual; isso permanece como limitação de verificação, sem invalidar a autorização expressa do usuário.
+
+A Fase 6 implementará um modo de evento online separado dos eventos locais. O sorteio será calculado no serviço Dart e seus pares nunca retornarão à área do organizador; cada link público terá acesso somente ao resultado associado ao token. Login Google protege a área do organizador. O envio pelo WhatsApp continuará manual. Nenhuma conta de nuvem será criada e nenhum deploy será feito nesta fase sem autorização específica.
+
+**Primeiro passo planejado:** extrair o motor de sorteio e seus modelos para um pacote Dart puro compartilhado pelo Flutter e pelo serviço, e criar serviço de domínio testável. Essa primeira entrega está concluída abaixo.
+
+## 26. Fase 6 — primeira entrega: motor compartilhado e serviço de domínio
+
+**Implementado:** `packages/draw_engine` contém o algoritmo, matching e modelos Dart puros. O app Flutter importa o pacote mantendo os imports de domínio atuais via exports. `server/` é um pacote Dart independente com `OnlineDrawService`, interface de armazenamento, tokens bearer de 256 bits gerados com `Random.secure`, armazenamento por hash SHA-256, DTO do organizador sem campos de resultado, revelação individual, validação de participantes e revogação. Os links usam fragmento `#/reveal/<token>`.
+
+**Verificações executadas em 2026-11-05:**
+
+| Verificação | Comando | Resultado |
+| --- | --- | --- |
+| Dependências Flutter | `flutter pub get` | Resolvido pacote local `draw_engine` |
+| Testes do motor | `flutter test test/features/draw/domain/draw_engine_test.dart` | 8 testes passaram, incluindo 200 participantes, restrições e uniformidade |
+| Testes de domínio do serviço | `dart pub get` e `dart test` em `server/` | 2 testes passaram: links não expõem pares, token inválido e revogação |
+| Análise do serviço | `dart analyze` em `server/` | Sem issues |
+| Regressão Flutter | `flutter test` | 87 testes passaram |
+| Análise Flutter | `flutter analyze` | Sem issues |
+| Formatação | `dart format --output=none --set-exit-if-changed .` | 102 arquivos; 0 alterações |
+| Build Web | `flutter build web --release` | Concluído em 124,1 s; avisos informativos Wasm dry-run e tree-shaking |
+| Diff | `git diff --check` | Sem erros de whitespace |
+
+**Intercorrências:** a primeira execução dos testes do serviço falhou porque o teste não importava o pacote que declara `DrawRequest`; o import foi corrigido e os 2 testes passaram. A primeira análise Flutter reportou 4 issues de estilo; construtor e imports foram ajustados, e a análise repetida passou. Nenhum dado real foi usado.
+
+**Limites desta entrega:** ainda não há servidor HTTP, autenticação Google, persistência Firestore, regras de segurança, UI de evento online nem Firebase Emulator. O serviço de domínio usa armazenamento injetado; não pode receber tráfego de produção.
+
+**Próximo passo exato:** implementar API HTTP local e testar seu contrato, adicionar verificação de ID token Firebase e adaptador Firestore pelo Emulator. Só depois integrar a UI; nenhuma criação de projeto cloud ou publicação sem autorização.

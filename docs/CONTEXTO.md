@@ -2,18 +2,19 @@
 
 ## 1. Visão do produto
 
-O Amigo Secreto é um aplicativo local-first para uma pessoa organizar um evento de amigo secreto. O organizador cadastra participantes, organiza famílias e casais, define restrições, realiza um sorteio válido e envia os resultados individualmente pelo WhatsApp.
+O Amigo Secreto mantém eventos locais e passa a desenvolver um modo online separado. No modo local, o organizador mantém os dados no próprio dispositivo e pode ver os resultados; no modo online, o sorteio é guardado no servidor e distribuído por links individuais.
 
 O aplicativo deve ser simples para quem não tem conhecimento técnico: formulários curtos, linguagem clara, poucos passos e retomada fácil depois de fechar o navegador ou o celular.
 
 ## 2. Público e modelo de uso
 
-- **Organizador:** uma única pessoa, usando seu próprio número e sua conta do WhatsApp. É quem cria o evento, cadastra as pessoas, realiza o sorteio, vê os resultados e confirma os envios.
+- **Organizador local:** uma pessoa que cadastra participantes, realiza o sorteio, pode ver os resultados e confirma os envios.
+- **Organizador online:** entra com Google, cria evento online e recebe links para distribuir sem ver os pares na tela.
 - **Participante:** pessoa que tira outra. Pode ter telefone próprio, usar o telefone de um responsável ou não ter contato válido para WhatsApp.
 - **Responsável:** pessoa que recebe a mensagem no lugar do participante. Pode participar ou não do sorteio. O resultado continua pertencendo ao participante.
 - **Convidado sem celular:** participa normalmente do sorteio; a entrega é feita pelo responsável ou manualmente.
 
-O organizador pode acessar todos os resultados. Responsáveis conhecem os resultados que recebem. Um modelo em que nem o organizador vê os pares exigiria outra arquitetura (por exemplo, envio por servidor com criptografia de ponta a ponta) e está fora do MVP.
+No modo local, o organizador pode acessar todos os resultados. No modo online, a interface do organizador não recebe os pares. Os links são bearer: qualquer pessoa que obtenha um link pode abri-lo, inclusive o organizador; administradores técnicos do serviço podem ter acesso à infraestrutura.
 
 ## 3. Escopo do MVP
 
@@ -36,7 +37,7 @@ O organizador pode acessar todos os resultados. Responsáveis conhecem os result
 
 ### Fora do MVP
 
-- backend, banco em nuvem, login, contas e sincronização entre dispositivos;
+- backend, banco em nuvem, login e sincronização no modo local;
 - envio automático ou sem interação pelo WhatsApp;
 - WhatsApp Business API, automação do WhatsApp Web ou bibliotecas não oficiais;
 - confirmação de entrega/leitura pelo aplicativo;
@@ -54,7 +55,8 @@ O organizador pode acessar todos os resultados. Responsáveis conhecem os result
 | Tema | Decisão | Justificativa resumida |
 | --- | --- | --- |
 | Plataforma inicial | Flutter Web (PWA), com publicação estática | Menor atrito de instalação; funciona em celular e computador; sem backend. Android fica para depois. |
-| Backend | Não haverá backend no MVP | O uso é individual e local; um servidor adicionaria custo, autenticação e complexidade sem benefício comprovado. |
+| Modo local | Sem backend, login ou sincronização | Preserva uso simples, local e offline. |
+| Modo online (pós-MVP) | Cloud Run Dart, Firestore, Firebase Authentication Google e Hosting | Permite sortear no servidor e revelar cada resultado por link individual. |
 | Persistência | Sembast local: arquivo no Android/desktop e IndexedDB na Web | Transações, simplicidade, suporte a todas as plataformas e backup em JSON. |
 | Estado | Riverpod, sem code generation | Testável, explícito e proporcional ao tamanho do app. |
 | Navegação | `go_router` | Rotas declarativas, URLs na Web e suporte a deep links. |
@@ -105,7 +107,7 @@ Estas premissas são reversíveis e devem ser confirmadas antes ou durante a fas
 
 ### Produto
 
-- O organizador vê todos os resultados; isso é intencional.
+- No modo local, o organizador vê todos os resultados; no modo online, não os vê na interface.
 - Um responsável pode receber várias mensagens separadas se for contato de várias pessoas.
 - O resultado é do participante, não do responsável.
 - Não há como garantir que o responsável não compartilhe a mensagem.
@@ -134,8 +136,9 @@ Nenhuma delas bloqueia a criação desta documentação. A decisão 1 precisa se
 
 - Dados tratados: nome, apelido, telefone, vínculo de responsável, grupos, participação, resultado do sorteio e estado de envio.
 - Finalidade: exclusivamente organizar o evento e enviar as mensagens.
-- Compartilhamento: apenas o organizador e os destinatários das mensagens; não há telemetria, analytics ou envio de dados para servidores.
-- Retenção: enquanto o organizador mantiver os dados no dispositivo. O app deve oferecer exclusão de evento e backup.
+- Compartilhamento local: os dados locais não são enviados ao servidor do app.
+- Compartilhamento online: o serviço guarda evento, contatos e resultados até exclusão/revogação; cada link permite abrir somente o resultado associado, mas pode ser encaminhado.
+- Retenção local: enquanto o organizador mantiver os dados no dispositivo. O app deve oferecer exclusão de evento e backup.
 - Dados sensíveis: resultados e telefones. Backups devem ser guardados em local seguro e apagados quando não forem mais necessários.
 - Exemplos, testes e documentação usam apenas dados fictícios. Nenhum número real deve ser usado em testes automatizados.
 

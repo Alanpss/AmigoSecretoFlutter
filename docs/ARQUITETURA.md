@@ -2,7 +2,7 @@
 
 ## 1. Princípios
 
-- **Local-first:** os dados vivem no dispositivo; não há backend no MVP.
+- **Dois modos explícitos:** eventos locais usam Sembast; eventos online usam serviço separado. Nenhum evento local muda de modo automaticamente.
 - **Separação de responsabilidades:** interface, regras de negócio e persistência têm limites claros, sem camadas cerimoniais.
 - **Domínio testável:** sorteio, telefone, destinatário e mensagem são Dart puro, sem widgets, banco ou WhatsApp.
 - **Uma fonte de verdade por assunto:** requisitos definem comportamento; este documento define estrutura e decisões técnicas.
@@ -28,7 +28,7 @@
 
 **Quando reconsiderar:** se o uso principal for em celular sem depender de navegador, se o armazenamento do navegador for um risco inaceitável ou se a integração nativa com o WhatsApp for um requisito. Nesses casos, Android passa a ser a plataforma inicial e a Fase 1 inclui o toolchain Android.
 
-**Não usar backend agora:** não há necessidade comprovada de sincronização, multiusuário, autenticação ou confirmação de entrega. Um backend adicionaria custo, LGPD, disponibilidade e superfície de ataque. Reavaliar se o produto evoluir para múltiplos organizadores, sincronização entre dispositivos ou envio por API oficial.
+O modo local permanece sem backend. A Fase 6 adiciona um modo online porque o requisito de esconder pares do organizador exige que o sorteio não seja feito no navegador.
 
 ### 2.2 Web
 
@@ -126,7 +126,7 @@ Por que não as alternativas:
 - `shared_preferences`: a documentação oficial alerta que não serve para dados críticos; não oferece transações nem consultas. Seria arriscado para o sorteio.
 - SQLite/`drift`: robusto e relacional, mas exige configuração de WASM/worker na Web e code generation/migrations mais pesadas para um app pequeno. É a alternativa se o modelo crescer muito.
 - `hive`/key-value: simples, mas sem transações relacionais e com semântica de consistência menos adequada ao sorteio.
-- Backend/Firestore: desnecessário e contrário ao requisito de simplicidade.
+- Firestore continua fora do modo local; a Fase 6 o usa somente no modo online e apenas através do serviço confiável.
 
 O volume é pequeno (centenas de pessoas/entregas), e o banco inteiro cabe em memória. Transações e backup em JSON atendem ao MVP.
 
@@ -193,6 +193,16 @@ Chaves são IDs UUID em string. Consultas pequenas carregam o conjunto do evento
 - Um backup contém telefones e resultados, não é criptografado e nunca deve ser incluído no repositório.
 - Quando a abertura normal do banco falha, a tela inicial oferece selecionar e validar um backup; após confirmação, importa em transação e tenta abrir o app novamente. Se o próprio armazenamento estiver inacessível/corrompido, a restauração também pode falhar sem apagar automaticamente os dados.
 - Na Web, o download padrão não fornece um caminho de arquivo ao aplicativo; a interface informa que a exportação foi iniciada e orienta conferir os downloads. Cancelamento é identificado nos diálogos de salvamento das plataformas que retornam um destino.
+
+## 12. Modo online (Fase 6)
+
+O modo online é um fluxo de dados distinto. Firebase Hosting serve a UI; Firebase Authentication identifica o organizador com Google; o serviço Dart no Cloud Run valida o token e acessa o Firestore com identidade de serviço. Regras do Firestore negam acesso direto aos clientes; o serviço é a única API que lê/escreve os documentos privados.
+
+O motor de sorteio vive no pacote puro `packages/draw_engine`, sem Flutter, e é dependência tanto do app quanto de `server/`. O serviço grava resultados no backend, calcula SHA-256 dos tokens bearer antes de persistir, e entrega o token cru somente na lista de links do organizador. A resposta dessa lista inclui participante, destinatário, telefone e URL, sem `receiverName` ou `receiverId`. A resolução pública valida o token e retorna um único nome sorteado.
+
+Tokens na URL ficam na parte `#fragment`, que não é enviada ao servidor junto com o pedido HTTP inicial. A página pública não deve incluir o token em analytics, logs, mensagens de prévia nem `Referer`. Os links são revogáveis e reabríveis; quem obtiver um link pode ler seu resultado.
+
+Eventos locais e seus backups continuam em Sembast e não incluem dados do modo online. O serviço terá seu próprio armazenamento e política de exclusão. Nenhuma credencial de projeto Firebase ou Cloud Run deve ser commitada.
 
 ## 6. Modelo de dados
 

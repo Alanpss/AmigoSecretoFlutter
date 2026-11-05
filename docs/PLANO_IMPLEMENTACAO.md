@@ -21,7 +21,8 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 2 | Cadastro e organização | Eventos, pessoas, participantes, responsáveis e grupos funcionando | Fase 1 | Aceita em 2026-11-03 |
 | 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Aceita em 2026-11-03 |
 | 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada para transição; link aberto com dado fictício, mas emojis apareceram como caractere de substituição após redirecionamento |
-| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Parcial; leitor de tela, zoom 200% e Edge pendentes |
+| 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Aceita pelo usuário em 2026-11-05; automação não validou Edge/leitor de tela/zoom |
+| 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Em andamento |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -651,7 +652,46 @@ A Fase 5 e o MVP são aceitos quando todos os critérios acima forem demonstrado
 
 ---
 
-## 9. Critérios de conclusão de qualquer fase
+## 9. Fase 6 — Sorteio online com links individuais
+
+**Autorização:** usuário autorizou em 2026-11-05. O aceite da Fase 5 foi confirmado pelo usuário; a automação não conseguiu validar Edge, Narrator ou zoom manual e essa limitação permanece documentada.
+
+**Objetivo:** permitir criar eventos online distintos dos locais, calcular e guardar o sorteio no servidor e distribuir resultados por links individuais. A tela do organizador recebe nomes, destinatários e links, sem receber os pares sorteados.
+
+**Arquitetura escolhida:** Firebase Authentication com Google para o organizador; Firestore acessado exclusivamente pelo serviço Dart no Cloud Run; Firebase Hosting para o Flutter Web. O serviço reutiliza o motor Dart puro compartilhado em pacote. Regras de acesso do cliente negam leitura dos dados privados; o serviço verifica identidade e autorização do organizador. Nenhuma conta, projeto cloud ou deploy será realizado sem autorização específica.
+
+**Comportamento:**
+
+- eventos existentes continuam locais; o organizador escolhe local ou online ao criar evento;
+- apenas o serviço online gera, valida e persiste os pares; a API do organizador nunca devolve os resultados;
+- cada participante recebe um token aleatório de alta entropia; o link retorna apenas o resultado correspondente;
+- links podem ser reabertos e revogados; mensagens de prévia não contêm o resultado;
+- a área do organizador mostra participante, destinatário e link; WhatsApp abre com somente o link e exige envio manual;
+- backup local não exporta os resultados dos eventos online;
+- link é bearer: qualquer pessoa que o obtenha pode abrir aquele resultado, inclusive o organizador, conforme escolha do usuário.
+
+**Critérios de aceite:**
+
+- motor de sorteio compartilhado entre Flutter e serviço sem divergência de regras;
+- API exige login/posse do evento nas rotas do organizador e não retorna assignments;
+- cada token revela somente um resultado; token inválido/revogado falha sem dados;
+- transações preservam revisão, unicidade, restrições e estado ativo em concorrência/retry;
+- testes incluem 200 participantes, evento impossível, violação de grupo, tokens, autorização e ausência de resultados na resposta do organizador;
+- fluxo completo usa Firebase Emulator/serviço local e dados fictícios; nenhum envio WhatsApp é feito;
+- documentação de privacidade, configuração e custos é atualizada; `flutter analyze`, format, testes e build passam.
+
+**Estado da primeira entrega autorizada:**
+
+- [x] Extrair o motor de sorteio para `packages/draw_engine` Dart puro, mantendo os imports do app por exports.
+- [x] Criar `OnlineDrawService` testável que gera tokens, persiste hashes, retorna somente links e revoga tokens.
+- [x] Cobrir revelação individual, invalidação de token, 200 participantes no motor e regressão do app.
+- [ ] Criar API HTTP, autenticação Firebase e persistência Firestore testável pelo Emulator.
+
+O primeiro portão passou: app, motor e domínio do serviço foram analisados e testados. A continuação integra API, autenticação e Firestore antes de adicionar a UI.
+
+---
+
+## 10. Critérios de conclusão de qualquer fase
 
 Uma fase só é considerada concluída quando:
 
@@ -664,7 +704,7 @@ Uma fase só é considerada concluída quando:
 7. não há segredos, dados pessoais reais ou backups no repositório;
 8. o usuário autorizou a fase seguinte, se houver.
 
-## 10. Controle de mudanças
+## 11. Controle de mudanças
 
 - Mudança de escopo dentro de uma fase: registrar em `docs/PROGRESSO.md` e pedir confirmação se alterar critérios de aceite.
 - Mudança de arquitetura ou dependência: atualizar `docs/ARQUITETURA.md` e criar/atualizar um ADR.
@@ -672,7 +712,7 @@ Uma fase só é considerada concluída quando:
 - Descoberta de que uma fase anterior está incompleta: parar, registrar e corrigir antes de avançar, com autorização.
 - Não usar `flutter clean`, apagar banco ou reverter trabalho do usuário para contornar problemas.
 
-## 11. Decisões pendentes
+## 12. Decisões pendentes
 
 | Decisão | Quando é necessária | Padrão recomendado |
 | --- | --- | --- |

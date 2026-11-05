@@ -334,3 +334,7 @@ Registrado em `docs/PROGRESSO.md`: versões exatas, avisos aceitos, resultados e
 - Não commitar `.dart_tool/`, `build/`, bancos locais, backups ou arquivos com dados reais.
 - Não publicar, fazer deploy ou enviar mensagens reais sem autorização.
 - Não alterar o `README.md` removido, `.vs/` ou `EstudoEntityFramework/` na raiz do repositório.
+
+## 12. Serviço Dart (Fase 6)
+
+O pacote compartilhado `packages/draw_engine` é Dart puro, sem dependência Flutter. `server/` é um pacote Dart separado e usa `crypto` para armazenar hashes de tokens bearer e `test` para a suíte. Configure com `dart pub get` a partir de `server/` e execute com `dart test`. Firebase Authentication/Firestore Emulator e Cloud Run ainda não foram adicionados à configuração local; serão registrados quando essa integração for implementada. Não é necessário criar projeto Google/Firebase nesta etapa.

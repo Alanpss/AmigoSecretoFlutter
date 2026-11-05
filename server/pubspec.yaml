@@ -1,0 +1,17 @@
+name: online_draw_server
+description: Domain service for private online secret-santa draws.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  crypto: ^3.0.6
+  draw_engine:
+    path: ../packages/draw_engine
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0
+
