@@ -1,6 +1,6 @@
 # Preparar publicação Web
 
-Este guia descreve como preparar o artefato estático do Flutter Web. Ele não escolhe um provedor, não configura credenciais e não publica o aplicativo. A publicação depende de uma decisão e autorização explícitas.
+Este guia descreve como preparar o artefato estático do Flutter Web. A configuração automatizada com Docker/CI está planejada na Fase 8. Este documento não configura credenciais nem publica o aplicativo; criação de recursos e deploy real exigem autorização explícita.
 
 ## 1. Gerar e revisar o artefato
 
@@ -35,3 +35,7 @@ O artefato fica em `build/web/`. Faça a revisão final desse diretório e confi
 6. Antes da publicação pública, obter autorização explícita. Não incluir dados reais de eventos no pacote; cada organizador deve criar ou importar os próprios dados localmente.
 
 O modo local não possui backend nem sincronização. Publicá-lo não hospeda eventos ou backups, e cada navegador mantém dados separados por origem. Backups contêm telefones e resultados e devem ser guardados fora do site, em local seguro. O modo online usa serviço Cloud Run/Firebase e ainda não foi publicado; a configuração e o deploy desse serviço exigem autorização e uma revisão separadas.
+
+## 4. Automação planejada na Fase 8
+
+O objetivo registrado no plano é usar Docker Compose para desenvolvimento e testes locais com API, Flutter Web e Firebase Emulators. Para produção, o Flutter Web será publicado no Firebase Hosting e a imagem Dart no Cloud Run. O Firebase de produção continua gerenciado pelo provedor; Docker não o empacota como um serviço local. Requisitos de projeto, Authentication Google, Firestore, IAM, domínio, segredos do CI e reversão estão descritos como entregas planejadas em `docs/PLANO_IMPLEMENTACAO.md`, seção 11. Nenhum deploy é realizado por este roteiro.

@@ -6,6 +6,67 @@ import 'package:online_draw_server/online_draw_server.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('exclui evento e resultados em um commit condicionado', () async {
+    Map<String, dynamic>? commit;
+    final server = await HttpServer.bind('127.0.0.1', 0);
+    server.listen((request) async {
+      final body = await utf8.decoder.bind(request).join();
+      if (request.method == 'GET' &&
+          request.uri.path.endsWith('/events/event-delete')) {
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write(
+            jsonEncode({
+              'updateTime': '2026-11-12T12:00:00Z',
+              'fields': {
+                'ownerUid': {'stringValue': 'owner-1'},
+                'linkHashes': {
+                  'arrayValue': {
+                    'values': [
+                      {'stringValue': 'hash-a'},
+                      {'stringValue': 'hash-b'},
+                    ],
+                  },
+                },
+              },
+            }),
+          );
+      } else if (request.uri.path.endsWith('/documents:commit')) {
+        commit = jsonDecode(body) as Map<String, dynamic>;
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..write('{}');
+      } else {
+        request.response.statusCode = HttpStatus.notFound;
+      }
+      await request.response.close();
+    });
+    addTearDown(server.close);
+
+    final store = FirestoreOnlineDrawStore(
+      projectId: 'demo-project',
+      accessTokenProvider: () async => 'service-token',
+      emulatorHost: '127.0.0.1:${server.port}',
+    );
+    expect(
+      await store.deleteEvent(eventId: 'event-delete', ownerUid: 'owner-1'),
+      isTrue,
+    );
+    final writes = commit!['writes'] as List;
+    expect(writes, hasLength(3));
+    expect(jsonEncode(writes), contains('/results/hash-a'));
+    expect(jsonEncode(writes), contains('/results/hash-b'));
+    expect(jsonEncode(writes), contains('/events/event-delete'));
+    expect(jsonEncode(writes.last), contains('2026-11-12T12:00:00Z'));
+    commit = null;
+    expect(
+      await store.deleteEvent(eventId: 'event-delete', ownerUid: 'other'),
+      isFalse,
+    );
+    expect(commit, isNull);
+    store.close();
+  });
+
   test('usa caminhos REST do Firestore, identidade de serviço e commit atômico', () async {
     final requests = <String>[];
     final server = await HttpServer.bind('127.0.0.1', 0);

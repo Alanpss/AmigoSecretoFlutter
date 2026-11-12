@@ -28,6 +28,14 @@ Convenções: **DEVE** é obrigatório; **NÃO DEVE** é proibido; **PODE** é o
 - **RF-EVT-05:** o evento DEVE manter a referência ao sorteio ativo, se existir.
 - **RF-EVT-06:** ao reabrir o aplicativo, o evento e seu sorteio ativo DEVEM ser restaurados sem gerar outro resultado.
 - **RF-EVT-07:** excluir um evento com mensagens confirmadas DEVE destacar o impacto e exigir confirmação explícita.
+- **RF-EVT-08:** copiar um evento entre modos DEVE criar um novo evento em rascunho e manter a origem sem alterações.
+- **RF-EVT-09:** a cópia NÃO DEVE transportar sorteios, atribuições, entregas, links bearer ou tokens.
+- **RF-EVT-10:** local → online DEVE exibir prévia e pedir confirmação explícita antes de enviar dados pessoais ao serviço; cancelar não altera dados.
+- **RF-EVT-11:** online → local DEVE usar apenas o rascunho cadastral disponível neste navegador; se ausente, não deve buscar pares ou inferir dados no servidor.
+- **RF-EVT-12:** conversões NÃO DEVEM mesclar automaticamente pessoas com cadastros locais existentes.
+- **RF-EVT-13:** a área online DEVE permitir manter vários eventos independentes no mesmo navegador, listar e reabrir cada um sem misturar participantes ou links.
+- **RF-EVT-14:** falhas na API do sorteio DEVEM distinguir serviço indisponível, autenticação, falta de acesso, conflito de revisão, dados rejeitados e falha interna, e indicar a próxima ação sem exibir dados pessoais.
+- **RF-EVT-15:** o organizador DEVE conseguir sair da conta Google e excluir um evento online com confirmação; ao excluir evento sorteado, os resultados e links daquele evento DEVEM ser invalidados no servidor.
 
 ### 2.2 Pessoas e participantes
 

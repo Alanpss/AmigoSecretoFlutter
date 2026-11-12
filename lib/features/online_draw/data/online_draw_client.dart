@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,24 +47,39 @@ class OnlineDrawClient {
     required int pairingRevision,
   }) async {
     final user = auth.currentUser;
-    if (user == null) throw const OnlineDrawClientException();
-    final token = await user.getIdToken();
-    final response = await _http
-        .post(
-          Uri.parse(
-            '$apiBaseUrl/v1/events/${Uri.encodeComponent(eventId)}/draw',
-          ),
-          headers: {
-            'content-type': 'application/json',
-            'authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
-            'pairingRevision': pairingRevision,
-            'participants': participants,
-            'groups': groups,
-          }),
-        )
-        .timeout(const Duration(seconds: 20));
+    if (user == null) throw const OnlineDrawAuthenticationException();
+    final String? token;
+    try {
+      token = await user.getIdToken();
+    } catch (_) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    if (token == null || token.isEmpty) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    final http.Response response;
+    try {
+      response = await _http
+          .post(
+            Uri.parse(
+              '$apiBaseUrl/v1/events/${Uri.encodeComponent(eventId)}/draw',
+            ),
+            headers: {
+              'content-type': 'application/json',
+              'authorization': 'Bearer $token',
+            },
+            body: jsonEncode({
+              'pairingRevision': pairingRevision,
+              'participants': participants,
+              'groups': groups,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      throw const OnlineDrawServiceUnavailableException();
+    } catch (_) {
+      throw const OnlineDrawServiceUnavailableException();
+    }
     if (response.statusCode == 422) {
       final error = jsonDecode(response.body);
       if (error is Map<String, dynamic> &&
@@ -71,7 +87,24 @@ class OnlineDrawClient {
         throw const OnlineDrawImpossibleClientException();
       }
     }
-    if (response.statusCode != 201) throw const OnlineDrawClientException();
+    if (response.statusCode == 400) {
+      throw const OnlineDrawInvalidDataException();
+    }
+    if (response.statusCode == 401) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    if (response.statusCode == 403) {
+      throw const OnlineDrawAccessException();
+    }
+    if (response.statusCode == 409) {
+      throw const OnlineDrawConflictException();
+    }
+    if (response.statusCode >= 500) {
+      throw const OnlineDrawServerException();
+    }
+    if (response.statusCode != 201) {
+      throw const OnlineDrawClientException();
+    }
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic> || data['links'] is! List) {
       throw const OnlineDrawClientException();
@@ -125,6 +158,43 @@ class OnlineDrawClient {
     );
     if (response.statusCode != 200) throw const OnlineDrawClientException();
   }
+
+  Future<void> deleteEvent({required String eventId}) async {
+    final user = auth.currentUser;
+    if (user == null) throw const OnlineDrawAuthenticationException();
+    final String? idToken;
+    try {
+      idToken = await user.getIdToken();
+    } catch (_) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    if (idToken == null || idToken.isEmpty) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    final http.Response response;
+    try {
+      response = await _http
+          .delete(
+            Uri.parse('$apiBaseUrl/v1/events/${Uri.encodeComponent(eventId)}'),
+            headers: {'authorization': 'Bearer $idToken'},
+          )
+          .timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      throw const OnlineDrawServiceUnavailableException();
+    } catch (_) {
+      throw const OnlineDrawServiceUnavailableException();
+    }
+    if (response.statusCode == 401) {
+      throw const OnlineDrawAuthenticationException();
+    }
+    if (response.statusCode == 403) {
+      throw const OnlineDrawAccessException();
+    }
+    if (response.statusCode >= 500) {
+      throw const OnlineDrawServerException();
+    }
+    if (response.statusCode != 200) throw const OnlineDrawClientException();
+  }
 }
 
 class OnlineDrawClientException implements Exception {
@@ -133,4 +203,28 @@ class OnlineDrawClientException implements Exception {
 
 class OnlineDrawImpossibleClientException implements Exception {
   const OnlineDrawImpossibleClientException();
+}
+
+class OnlineDrawServiceUnavailableException implements Exception {
+  const OnlineDrawServiceUnavailableException();
+}
+
+class OnlineDrawAuthenticationException implements Exception {
+  const OnlineDrawAuthenticationException();
+}
+
+class OnlineDrawAccessException implements Exception {
+  const OnlineDrawAccessException();
+}
+
+class OnlineDrawConflictException implements Exception {
+  const OnlineDrawConflictException();
+}
+
+class OnlineDrawInvalidDataException implements Exception {
+  const OnlineDrawInvalidDataException();
+}
+
+class OnlineDrawServerException implements Exception {
+  const OnlineDrawServerException();
 }

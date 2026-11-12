@@ -80,6 +80,8 @@ abstract interface class OnlineDrawStore {
   Future<StoredDrawResult?> findResultByTokenHash(String tokenHash);
 
   Future<void> revokeToken(String tokenHash);
+
+  Future<bool> deleteEvent({required String eventId, required String ownerUid});
 }
 
 /// Generates and persists a complete draw without returning pairings to the
@@ -188,6 +190,11 @@ class OnlineDrawService {
     if (token.length < 32) return;
     await _store.revokeToken(sha256.convert(utf8.encode(token)).toString());
   }
+
+  Future<bool> deleteEvent({
+    required String eventId,
+    required String ownerUid,
+  }) => _store.deleteEvent(eventId: eventId, ownerUid: ownerUid);
 
   static String _secureToken() {
     final random = Random.secure();

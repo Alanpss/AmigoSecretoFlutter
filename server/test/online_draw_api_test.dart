@@ -109,6 +109,48 @@ void main() {
       client.close(force: true);
     },
   );
+
+  test('exclusão exige posse e invalida todos os links do evento', () async {
+    final client = HttpClient();
+    final created = await _post(
+      client,
+      baseUri.resolve('/v1/events/event-delete/draw'),
+      {
+        'pairingRevision': 1,
+        'participants': [
+          {'id': 'p1', 'name': 'Pessoa A', 'recipientName': 'Pessoa A'},
+          {'id': 'p2', 'name': 'Pessoa B', 'recipientName': 'Pessoa B'},
+        ],
+        'groups': [],
+      },
+      token: 'valid',
+    );
+    expect(created.statusCode, HttpStatus.created);
+    final forbidden = await _delete(
+      client,
+      baseUri.resolve('/v1/events/event-delete'),
+      token: 'other',
+    );
+    expect(forbidden.statusCode, HttpStatus.forbidden);
+
+    final deleted = await _delete(
+      client,
+      baseUri.resolve('/v1/events/event-delete'),
+      token: 'valid',
+    );
+    expect(deleted.statusCode, HttpStatus.ok);
+    final links =
+        (jsonDecode(created.body) as Map<String, dynamic>)['links'] as List;
+    for (final value in links) {
+      final link = value as Map<String, dynamic>;
+      final token = Uri.parse(link['url'] as String).fragment.split('/').last;
+      final reveal = await _post(client, baseUri.resolve('/v1/reveal'), {
+        'token': token,
+      });
+      expect(reveal.statusCode, HttpStatus.notFound);
+    }
+    client.close(force: true);
+  });
 }
 
 Future<_Response> _post(
@@ -191,4 +233,15 @@ class _MemoryStore implements OnlineDrawStore {
 
   @override
   Future<void> revokeToken(String tokenHash) async => results.remove(tokenHash);
+
+  @override
+  Future<bool> deleteEvent({
+    required String eventId,
+    required String ownerUid,
+  }) async {
+    if (owners[eventId] != ownerUid) return false;
+    owners.remove(eventId);
+    results.removeWhere((_, result) => result.eventId == eventId);
+    return true;
+  }
 }

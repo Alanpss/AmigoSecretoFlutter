@@ -38,7 +38,15 @@ O modo local permanece sem backend. A Fase 6 adiciona um modo online porque o re
 - Sem service worker customizado no MVP; se adicionado, cuidar de cache de versões para não servir código antigo.
 - O app deve funcionar em Chrome/Edge atuais. Safari/iOS não é alvo de aceite do MVP.
 
-### 2.3 Android (fase posterior)
+### 2.3 Docker e publicação (planejado para a Fase 8)
+
+- Docker Compose será o ambiente de desenvolvimento reproduzível: contêineres para Flutter Web, API Dart e Firebase Auth/Firestore Emulators.
+- Em produção, Firebase Hosting continua sendo hospedagem gerenciada do artefato estático; Cloud Run executa a imagem da API. Docker não substitui nem hospeda os serviços Firebase de produção.
+- `firebase.json` já define o diretório `build/web`, fallback SPA e caminho das regras Firestore. `server/Dockerfile` já prepara o serviço Dart para Cloud Run; ambos serão revisados e integrados ao pipeline na Fase 8.
+- Configuração de projeto e chaves não serão gravadas em imagem ou repositório. O ambiente local usa valores demo; CI/deploy usa identidade federada ou segredos protegidos.
+- Aplicar a configuração em conta real, habilitar cobrança, criar recursos ou publicar continua sujeito a autorização explícita separada.
+
+### 2.4 Android (fase posterior)
 
 - Mesmo código Dart; adicionar a plataforma Android quando autorizado.
 - Usar `path_provider` para o banco e `url_launcher` para o link.
@@ -602,6 +610,19 @@ Não criar interfaces para tudo; apenas para bordas de plataforma ou aleatorieda
 - Não colocar dados pessoais em URLs, nomes de arquivos, logs ou mensagens de erro.
 - Backups são sensíveis; avisar e nunca enviar automaticamente.
 - Sem autenticação/PIN no MVP; um PIN local não substituiria criptografia e pode dar falsa sensação de segurança. Reavaliar no futuro.
+
+### 13.1 Cópia entre modos
+
+- `OnlineDraftLocalCopyRepository` grava evento, pessoas, participantes e grupos em uma transação Sembast. A cópia começa sem sorteio e sem entregas.
+- A conversão online → local lê apenas `onlineDrafts` no mesmo navegador; campos de resultado, links e tokens do rascunho são ignorados.
+- Novas identidades são criadas dentro da cópia. Destinatários repetidos com o mesmo nome normalizado e telefone podem compartilhar a identidade criada nessa cópia; nenhum registro existente é reutilizado.
+- Local → online prepara o formulário após confirmação; antes da primeira requisição, um segundo diálogo pede autorização explícita para enviar nomes/contatos e sortear. Essa confirmação fica pendente no rascunho até a operação ter sucesso. O rascunho permanece local e fora do backup.
+- `OnlineDrawDraftRepository` armazena cada rascunho sob seu próprio ID de evento online e lista vários eventos no navegador. O registro antigo `current` é migrado ao ID preservando links. Essa lista não sincroniza nem pode recuperar cadastros do Firestore em outro navegador.
+- A exclusão de evento online autenticada remove em um único commit Firestore o documento do evento e os resultados referenciados pelos hashes de links. A UI remove o rascunho local somente após confirmação do servidor, para não deixar links ativos sem um registro gerenciável.
+- O rascunho registra quando uma tentativa já pode ter criado o documento remoto; a exclusão é idempotente se o documento não chegou a ser criado, e nunca permite apagar documento de outro organizador.
+- A tela do organizador observa `FirebaseAuth.authStateChanges`; a ação sair aguarda o logout e atualiza imediatamente o estado de sessão exibido.
+- A tela traduz erros HTTP conhecidos e falha de conexão da API em instruções seguras; detalhes de exceção, payload e telefones não são mostrados.
+- O esquema online atual não possui data do evento nem apelido independente; esses campos não existem para copiar nesse sentido. O nome exibido do participante é copiado como nome.
 
 ## 14. Acessibilidade e responsividade
 

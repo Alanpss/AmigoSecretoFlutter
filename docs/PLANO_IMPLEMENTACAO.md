@@ -22,7 +22,9 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 3 | Sorteio e integridade | Sorteio válido, persistido, retomável, bloqueável e invalidável | Fase 2 aceita; autorização do usuário em 2026-11-03 | Aceita em 2026-11-03 |
 | 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada para transição; link aberto com dado fictício, mas emojis apareceram como caractere de substituição após redirecionamento |
 | 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Aceita pelo usuário em 2026-11-05; automação não validou Edge/leitor de tela/zoom |
-| 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Em andamento |
+| 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Aceita pelo usuário em 2026-11-12 |
+| 7 | Cópia e gestão de eventos online | Conversão local ↔ online e vários eventos online independentes, persistidos e reabríveis | Fase 6 aceita; autorização “pode iniciar a próxima fase” em 2026-11-12; ampliação pedida em 2026-11-12 | Autorizada; em andamento |
+| 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita; planejada a pedido do usuário em 2026-11-12; autorização de implementação pendente | Planejada; aguarda Fase 7 e autorização |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -697,7 +699,111 @@ Em 2026-11-12, o usuário confirmou as validações manuais restantes e aceitou 
 
 ---
 
-## 10. Critérios de conclusão de qualquer fase
+## 10. Fase 7 — Cópia de eventos entre modos
+
+**Autorização:** o usuário autorizou iniciar a próxima fase após aceitar a Fase 6, em 2026-11-12. Escopo baseado na decisão aceita no ADR-007.
+
+**Objetivo:** criar cópias independentes entre modos e permitir gerenciar vários eventos online no mesmo navegador. Cada evento tem seu rascunho, revisão e links; origem e outros eventos permanecem inalterados e nenhum par já sorteado é transferido.
+
+### 10.1 Escopo incluído
+
+1. Local → online: escolher evento local, apresentar prévia, confirmar preparação da cópia e exigir confirmação explícita de privacidade antes do primeiro envio de dados pessoais ao serviço.
+2. Criar novo evento online gera ID e rascunho separados; não reutiliza nem sobrescreve outro evento e seus links.
+3. Manter uma lista de eventos online locais, permitindo reabrir, editar, refazer sorteio, revogar links e copiar cada evento individualmente.
+3a. Permitir sair da sessão Google e excluir evento online com confirmação; para evento sorteado, apagar resultados no servidor e rascunho local somente após confirmação de sucesso da API.
+4. Persistir rascunho/links separados por ID de evento no mesmo navegador; migrar o registro legado `current` sem perder links. Dados seguem vinculados à origem do navegador e não são recuperados do Firestore em outro dispositivo.
+5. Online → local: copiar o rascunho online selecionado deste navegador para um novo evento local, sem consultar/importar resultados do servidor e sem revogar links da origem.
+6. Preservar participantes ativos/inativos, telefone disponível, destinatário direto, grupos, tipo e estado da restrição.
+7. Criar identidades locais novas para a cópia; não mesclar cadastros existentes automaticamente. Repetições exatas de destinatário dentro da própria cópia podem compartilhar identidade dentro da cópia.
+8. Manter toda cópia como rascunho sem sorteio. O organizador inicia um novo sorteio explicitamente no destino.
+9. Validar antes de gravar; cada conversão local é transacional. Informar API indisponível, autenticação, falta de acesso, conflito, dados rejeitados e falha do servidor com mensagens acionáveis, sem expor pares, telefones completos ou tokens.
+
+### 10.2 Fora do escopo
+
+- Migrar, importar ou revelar pares de qualquer sorteio existente.
+- Converter em lote eventos do Firestore ou recuperar o rascunho online em outro navegador/dispositivo.
+- Revogar links da origem automaticamente.
+- Mesclar pessoas da cópia com a agenda local existente.
+- Publicar Hosting/Cloud Run, criar/configurar projeto Firebase real, domínio ou custos de infraestrutura.
+- Sincronização entre dispositivos ou operação multiusuário.
+- Recuperar cadastro/link bearer após limpar dados do navegador, trocar de perfil ou origem; Firestore não guarda a lista de participantes para esse fim.
+
+### 10.3 Critérios de aceite observáveis
+
+- [x] A conversão aparece como ação clara nos fluxos local e online.
+- [x] É possível criar mais de um evento online, cada qual com ID, dados, revisão e links próprios.
+- [x] A lista local de eventos online continua disponível após recarregar o mesmo perfil/origem e permite reabrir qualquer evento sem trocar seus links.
+- [x] O registro antigo `current` migra para o novo armazenamento por ID sem perda de participantes ou links.
+- [x] Um sorteio/refação/revogação em um evento não altera os demais.
+- [x] Evento criado em nova sessão não sobrescreve rascunho nem links já existentes.
+- [x] Prévia mostra evento, número/situação dos participantes, contatos/destinatários e grupos/restrições antes de confirmar.
+- [x] Local → online exige confirmação clara de que os dados serão enviados ao serviço para criar um novo sorteio.
+- [x] Cancelar a confirmação não altera origem nem destino.
+- [x] Conversão cria um evento/cópia independente e preserva a origem byte a byte em seus dados de domínio.
+- [x] Participantes ativos/inativos, contatos diretos e grupos (tipo/membros/restrição) mantêm a configuração.
+- [x] A conversão não transfere sorteio, entregas, resultados, links bearer ou tokens.
+- [x] Online → local funciona somente a partir do rascunho disponível neste navegador e explica quando ele não existe.
+- [x] Cadastros duplicados na base local não são mesclados sem escolha; a cópia recebe novas identidades.
+- [x] Testes automatizados e validação manual cobrem cópias nos dois sentidos, configuração preservada, evento sorteado de origem, cópia sem pares, falha/cancelamento, duplicidade, telefone ausente, rascunho inexistente e eventos online múltiplos.
+- [x] `dart format`, `flutter analyze`, `flutter test`, `dart analyze` e `dart test` foram executados para os módulos aplicáveis; build Web release concluiu.
+- [x] API desligada exibe mensagem específica informando endereço/porta e que o serviço Dart precisa estar ativo; respostas HTTP 400/401/403/409/500 exibem orientação correspondente.
+- [x] Sair encerra a sessão Google na UI; excluir rascunho online remove somente aquele evento, e excluir evento sorteado invalida todos os links e resultados no servidor antes de limpar o rascunho local.
+
+### 10.4 Verificação e portão
+
+Automatizar a transformação e persistência de múltiplos rascunhos com bancos temporários e dados fictícios. Revisar no Chrome criação e retomada de dois eventos online, conversões nos dois sentidos, prévias/confirmar/cancelar, erro com API desligada e preservação isolada de origens/links. A API só é chamada após confirmação; não publicar nem abrir WhatsApp real.
+
+**Riscos:** dados de contato serão enviados ao serviço na direção local → online; mostrar prévia antes da confirmação e não iniciar requisição antes dela. O rascunho online é local ao navegador; informar essa limitação antes de conversão.
+
+**Portão de saída:** aceito pelo usuário em 2026-11-12 após confirmação de que todas as validações manuais pendentes no Chrome passaram. Testes automatizados, análise, formatação e build Web registrados em `docs/PROGRESSO.md`. Nenhum deploy ou serviço Firebase real foi usado. A Fase 8 continua planejada e só poderá iniciar mediante autorização explícita.
+
+---
+
+## 11. Fase 8 — Ambiente Docker e automação de publicação
+
+**Situação:** adicionada ao plano a pedido do usuário em 2026-11-12. A Fase 7 foi aceita em 2026-11-12; implementação da Fase 8 ainda não autorizada.
+
+**Objetivo:** tornar o ambiente reproduzível com Docker para desenvolvimento/teste e preparar a compilação e publicação dos artefatos Flutter Web e API Dart nos serviços gerenciados Firebase Hosting e Cloud Run.
+
+**Princípio:** Docker Compose executará os contêineres locais da aplicação, API e Firebase Emulators. Firebase Hosting, Authentication e Firestore são serviços gerenciados, não um serviço Firebase de produção dentro de um contêiner local. Em produção, o pipeline envia o artefato Web ao Hosting e a imagem da API ao Cloud Run. O Firebase Emulator Suite pode rodar em contêiner para desenvolvimento/CI.
+
+### 11.1 Escopo planejado
+
+1. Adicionar `compose.yaml` para API Dart, Flutter Web e Auth/Firestore Emulators, com configuração de ambiente demonstrativa, health checks, dependências e persistência/cache de emulador quando apropriado.
+2. Criar fluxo de build repetível para `build/web` e para a imagem do serviço Dart; aproveitar e revisar `server/Dockerfile` existente.
+3. Criar `.env.example` com valores fictícios e validar que `.env`, credenciais e chaves privadas não entram no Git ou nas imagens.
+4. Preparar deploy de Hosting e regras Firestore com Firebase CLI/configuração versionada, incluindo fallback de SPA e aliases de projeto para evitar publicar no projeto errado.
+5. Preparar deploy da imagem Dart no Cloud Run, com `PORT`, identidade de serviço e acesso mínimo ao Firestore; não embutir credenciais de serviço.
+6. Adicionar pipeline de CI para format, análise, testes, build Web e imagem da API. Preparar publicação de preview/staging com aprovação ou acionamento manual antes de qualquer produção.
+7. Documentar pré-requisitos de configuração inicial no Firebase/Google Cloud: projeto, plano/billing quando necessário, habilitação de APIs, Firestore, provedor Google do Authentication, IAM, domínio e segredos/identidades do pipeline.
+8. Fornecer verificação de saúde e roteiro de teste pós-deploy com links fictícios e procedimento de reversão da versão.
+
+### 11.2 Fora do escopo sem autorização separada
+
+- Criar projeto Firebase/Google Cloud real ou habilitar billing.
+- Aplicar Terraform/IaC em conta real, criar recursos, conceder permissões ou cadastrar domínio.
+- Fazer deploy real, abrir acesso público, enviar mensagens ou usar dados de participantes reais.
+- Comitar tokens, chaves de serviço ou credenciais pessoais; o pipeline deverá usar identidades gerenciadas/federação ou segredos protegidos.
+
+### 11.3 Critérios de aceite planejados
+
+- [ ] Em máquina limpa com Docker, `docker compose up --build` inicia Web, API e Auth/Firestore Emulators usando somente configurações fictícias.
+- [ ] O fluxo de login do Auth Emulator, persistência Firestore Emulator e API funciona pela Web local; testes de regra e sorteio continuam passando.
+- [ ] Build Web e imagem da API são reproduzíveis; a API escuta `PORT` e passa health check no contêiner.
+- [ ] O build Flutter usa configuração Firebase não secreta injetada por ambiente no momento de build; nenhum segredo ou dado pessoal é embutido em `build/web`.
+- [ ] Configuração Firebase Hosting aponta para o artefato correto, mantém fallback SPA e aplica somente regras Firestore aprovadas.
+- [ ] Pipeline executa format/análise/testes/build e publica preview/staging somente no ambiente configurado, com produção bloqueada até aprovação explícita.
+- [ ] Identidade de execução Cloud Run usa privilégios mínimos; não existe chave privada de conta de serviço em arquivo/imagem.
+- [ ] `.gitignore`/`.dockerignore` excluem `.env`, credenciais, banco local, backups e artefatos locais.
+- [ ] Documentação contém setup inicial, comandos locais, secrets/configuração, deploy, smoke test e reversão.
+- [ ] `flutter analyze`, `flutter test`, `dart analyze`, `dart test`, build Web e build/execução de contêiner aplicáveis passam.
+- [ ] Nenhum recurso de produção foi criado/publicado durante a implementação da fase sem autorização própria.
+
+**Verificação e portão:** revisão local e CI com Docker e emuladores primeiro; implantação em staging só depois de o usuário fornecer/autorizar o projeto e a configuração necessários. Produção, custos e abertura pública exigem autorização explícita separada.
+
+---
+
+## 12. Critérios de conclusão de qualquer fase
 
 Uma fase só é considerada concluída quando:
 
@@ -710,7 +816,7 @@ Uma fase só é considerada concluída quando:
 7. não há segredos, dados pessoais reais ou backups no repositório;
 8. o usuário autorizou a fase seguinte, se houver.
 
-## 11. Controle de mudanças
+## 13. Controle de mudanças
 
 - Mudança de escopo dentro de uma fase: registrar em `docs/PROGRESSO.md` e pedir confirmação se alterar critérios de aceite.
 - Mudança de arquitetura ou dependência: atualizar `docs/ARQUITETURA.md` e criar/atualizar um ADR.
@@ -718,7 +824,7 @@ Uma fase só é considerada concluída quando:
 - Descoberta de que uma fase anterior está incompleta: parar, registrar e corrigir antes de avançar, com autorização.
 - Não usar `flutter clean`, apagar banco ou reverter trabalho do usuário para contornar problemas.
 
-## 12. Decisões pendentes
+## 14. Decisões pendentes
 
 | Decisão | Quando é necessária | Padrão recomendado |
 | --- | --- | --- |

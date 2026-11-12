@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/events/presentation/event_form_page.dart';
+import '../features/online_draw/presentation/online_draw_events_page.dart';
 import '../features/online_draw/presentation/online_draw_page.dart';
 import '../features/online_draw/presentation/online_reveal_page.dart';
 import '../features/events/presentation/event_list_page.dart';
@@ -56,7 +57,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/online',
-        builder: (context, state) => const OnlineDrawPage(),
+        builder: (context, state) => const OnlineDrawEventsPage(),
+      ),
+      GoRoute(
+        path: '/online/new',
+        builder: (context, state) =>
+            OnlineDrawPage(sourceLocalEventId: state.extra as String?),
+      ),
+      GoRoute(
+        path: '/online/:draftId',
+        builder: (context, state) =>
+            OnlineDrawPage(draftId: state.pathParameters['draftId']!),
       ),
       GoRoute(
         path: '/reveal/:token',

@@ -479,7 +479,7 @@ Use exclusivamente dados fictícios e o projeto demo abaixo. O prefixo `demo-` f
 4. Terminal 3, raiz do repositório, inicie o app:
 
    ```powershell
-   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://localhost:8090 --dart-define=USE_FIREBASE_EMULATORS=true
+   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
    ```
 
    Se o Flutter não conseguir iniciar o Chrome automaticamente, mantenha o comando `web-server` ativo e abra manualmente `http://127.0.0.1:8081` no Chrome. Use `127.0.0.1` também nos links gerados; `localhost` e `127.0.0.1` são origens diferentes no navegador e podem resolver para interfaces de rede distintas.
@@ -513,3 +513,15 @@ dart test test/firestore_emulator_integration_test.dart --reporter expanded
 O teste usa somente documentos fictícios e valida leitura/escrita anônimas negadas pelas regras, gravação e leitura de 200 resultados reais no Emulator, e concorrência na revisão: somente uma gravação com a mesma revisão vence e a revisão seguinte permanece utilizável. Sem `FIRESTORE_EMULATOR_HOST`, esses cenários são ignorados; a suíte Dart normal continua executando os testes unitários com HTTP simulado.
 
 **Resultado manual informado pelo usuário em 2026-11-12:** fluxo de links/revelação/revogação; edição de grupos e estado de restrição; refazer sorteio com invalidação da revisão anterior; token inventado indisponível; sorteio impossível explica o problema e não gera links. Todos passaram no Chrome com dados fictícios. Nenhum envio WhatsApp foi realizado.
+
+## 18. Fase 7 — cópia entre modos
+
+Testes automatizados em `test/features/online_draw/data/online_draft_local_copy_repository_test.dart` validam que a cópia online → local preserva situação ativa/inativa, contato direto, grupo e restrição, cria destinatário compartilhado uma vez e não cria sorteio/atribuições. Entrada inválida deve falhar antes da gravação do evento.
+
+Validação manual confirmada pelo usuário em 2026-11-12 no Chrome: criar dois eventos online, recarregar e reabrir cada um; copiar evento local (incluindo evento já sorteado) para online, cancelar e confirmar a prévia; conferir que uma nova cópia não altera links de outros eventos; copiar rascunho online para local e conferir que a origem/links permanecem disponíveis. Com a API parada, verificar mensagem de conexão acionável. Dados fictícios; nenhum WhatsApp foi enviado.
+
+Validação manual confirmada pelo usuário em 2026-11-12: entrar com a identidade fictícia do Auth Emulator, tocar em **Sair** e confirmar que o formulário volta a oferecer login; entrar novamente, excluir um rascunho e conferir que os outros eventos permanecem. Em outro evento já sorteado, cancelar a confirmação e verificar que rascunho e links permanecem; confirmar exclusão e verificar que todos os links dele mostram link inválido e que os demais eventos continuam acessíveis.
+
+**Retomada de sorteios:** crie os Emulators, a API e o Flutter em três terminais conforme os passos 2–4 acima. A API é necessária para o sorteio e precisa permanecer ativa na porta 8090; verifique com `Test-NetConnection 127.0.0.1 -Port 8090`. Para validar apenas cópias e gerenciar rascunhos, não é necessário confirmar/enviar sorteio. A URL da API e a URL pública dos links usam `127.0.0.1` para evitar resolução diferente de `localhost`.
+
+**Gestão de vários eventos online:** na raiz do app, abra a lista “Eventos online”, crie dois eventos fictícios, aguarde o rascunho salvar, atualize a página e reabra cada um. Confirme que nomes, participantes, revisões e links correspondem ao evento selecionado; refazer/revogar um evento não deve alterar o outro. O teste deve usar a mesma origem do navegador (`http://127.0.0.1:8081`); trocar entre `localhost` e `127.0.0.1`, porta, perfil ou navegador acessa outro IndexedDB.

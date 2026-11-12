@@ -196,6 +196,50 @@ class FirestoreOnlineDrawStore implements OnlineDrawStore {
     }
   }
 
+  @override
+  Future<bool> deleteEvent({
+    required String eventId,
+    required String ownerUid,
+  }) async {
+    final eventPath = '$_root/events/${Uri.encodeComponent(eventId)}';
+    final event = await _get(eventPath);
+    if (event == null) return true;
+    if (_fieldString(event, 'ownerUid') != ownerUid) return false;
+    final updateTime = event['updateTime'];
+    if (updateTime is! String) return false;
+    final fields = event['fields'];
+    final hashesField = fields is Map<String, dynamic>
+        ? fields['linkHashes']
+        : null;
+    final hashesArray = hashesField is Map<String, dynamic>
+        ? hashesField['arrayValue']
+        : null;
+    final values = hashesArray is Map<String, dynamic>
+        ? hashesArray['values']
+        : null;
+    final hashes = values is List
+        ? values
+              .whereType<Map<String, dynamic>>()
+              .map((value) => value['stringValue'])
+              .whereType<String>()
+              .toSet()
+        : <String>{};
+    final writes = <Map<String, Object?>>[
+      for (final hash in hashes)
+        {'delete': '$_root/results/${Uri.encodeComponent(hash)}'},
+      {
+        'delete': eventPath,
+        'currentDocument': {'updateTime': updateTime},
+      },
+    ];
+    final response = await _request(
+      'POST',
+      _uri('$_root:commit'),
+      body: {'writes': writes},
+    );
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
   Future<Map<String, dynamic>?> _get(String path) async {
     final response = await _request('GET', _uri(path));
     if (response.statusCode == 404) return null;

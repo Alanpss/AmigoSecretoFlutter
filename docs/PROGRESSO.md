@@ -1,16 +1,16 @@
 # Progresso
 
 **Última atualização:** 2026-11-12
-**Fase atual:** Fase 6 — Sorteio online com links individuais **aceita pelo usuário**
-**Próxima fase:** Não definida nem autorizada
-**Implementação:** Fases 1–6 aceitas/liberadas; a implementação da conversão entre modos permanece para fase futura
+**Fase atual:** Fase 7 — Cópia e gestão de eventos online **aceita pelo usuário em 2026-11-12**
+**Próxima fase:** Fase 8 — Ambiente Docker e automação de publicação (planejada; aguarda autorização para implementação)
+**Implementação:** Fases 1–7 aceitas; Fase 8 planejada, sem autorização de início
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
 
 Este documento é a fonte de verdade para o **estado real do trabalho** e para o ponto exato de retomada. Em caso de divergência com outros documentos, vale o que está registrado aqui; o conflito deve ser resolvido antes de continuar.
 
 ## 1. Situação em uma frase
 
-As Fases 1 a 6 foram aceitas pelo usuário, com limitações de verificação registradas. O modo online tem API, autenticação, persistência e UI para grupos e links individuais; os fluxos manuais e automatizados da Fase 6 foram concluídos com dados fictícios no Auth/Firestore Emulator.
+As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação registradas. A Fase 7 foi concluída após implementar cópias entre modos, gestão de vários eventos online e validar os fluxos pendentes manualmente no Chrome.
 
 ## 2. Situação por fase
 
@@ -23,10 +23,12 @@ As Fases 1 a 6 foram aceitas pelo usuário, com limitações de verificação re
 | 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Link aberto manualmente com contato fictício; nenhum envio feito. Após redirecionamento do WhatsApp, emojis apareceram como caractere de substituição; investigar antes de considerar essa experiência validada | Verificar o comportamento em navegador compatível e corrigir se reproduzível no URI gerado pelo app |
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
+| 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
+| 8 — Ambiente Docker e automação de publicação | Planejada em 2026-11-12; implementação não autorizada | Escopo e critérios adicionados à seção 11 do plano | Aguardar autorização explícita de início |
 
 ## 3. Ponto exato de retomada
 
-Fase 6 aceita em 2026-11-12 depois que o usuário confirmou os quatro cenários manuais restantes no Chrome. Não há fase seguinte autorizada. A conversão entre modos foi decidida como cópia no ADR-007, mas sua implementação depende de planejamento e autorização futuros. Nenhum projeto cloud foi criado, nenhum deploy feito e nenhuma mensagem real enviada.
+Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 8 foi planejada a pedido do usuário em 2026-11-12, mas ainda não foi autorizada para implementação. Nenhum projeto cloud foi criado, nenhum deploy feito e nenhuma mensagem real enviada.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -205,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-Concluir a revisão manual da Fase 4 no navegador com evento, participantes e telefone fictícios; confirmar editor, filtro, cópia e redirecionamento click-to-chat sem enviar a mensagem. Registrar navegador/viewport e resultado. Corrigir problemas encontrados e repetir análise, testes, formatação e build. Não iniciar backup ou publicação.
+A Fase 7 foi aceita após as validações manuais no Chrome e os testes automatizados registrados. A próxima ação é aguardar autorização explícita do usuário antes de iniciar a Fase 8 — Docker e automação de publicação. Não publicar nem enviar mensagens WhatsApp sem autorização específica.
 
 ## 15. Histórico
 
@@ -485,3 +487,49 @@ O usuário informou que realizou e aprovou as quatro validações manuais penden
 **Evidências automatizadas registradas nesta fase:** Flutter `analyze` sem issues; `flutter test` com 88 testes; build Web release concluído; `dart analyze` sem issues em `server/`; suíte do servidor com 9 testes passando contra o Firestore Emulator, incluindo regras de acesso, lote de 200 resultados e concorrência de revisão; formatação verificada em 115 arquivos sem alterações; `git diff --check` sem erros (avisos de normalização LF/CRLF do Git).
 
 **Resultado:** Fase 6 aceita pelo usuário. A experiência online continua localmente validada com emuladores; projeto Firebase real, domínio e deploy não foram configurados nem publicados, conforme escopo. O próximo passo é definir e autorizar uma fase futura; ADR-007 registra a conversão como cópia preservando a origem e criando um novo sorteio.
+
+## 35. Início da Fase 7 — 2026-11-12
+
+O usuário autorizou iniciar a próxima fase. O escopo foi definido no plano como cópia local ↔ online, conforme ADR-007, sem publicação. A ação “Copiar para evento online” mostra prévia e confirmação, preserva a origem e deve criar um rascunho online independente. Dados só são enviados ao serviço após confirmação específica do envio e do sorteio.
+
+Implementada ação de copiar o rascunho online para novo evento local. A gravação é uma transação Sembast, cria novas identidades, preserva participantes ativos/inativos, destinatários e grupos, e ignora eventuais chaves de links/atribuições presentes no mapa de entrada. A cópia fica sem sorteio e não revoga nem altera a origem. Destinatários repetidos dentro da cópia podem compartilhar uma identidade; cadastros locais anteriores nunca são mesclados automaticamente. O modo online atual não dispõe de campo separado para data ou apelido, então esses campos não são preserváveis em local → online. Na direção local → online, uma segunda confirmação, anterior à requisição, autoriza o envio dos nomes/contatos; cancelar deixa o rascunho pendente e intacto.
+
+**Verificações executadas:** `flutter analyze` sem issues; `flutter test` com 90 testes passando; teste específico da persistência de cópia com 2 cenários passando; `dart format --output=none --set-exit-if-changed .` verificou 117 arquivos sem mudanças; `flutter build web --release` concluído; no servidor, `dart analyze` sem issues e `dart test` com 6 aprovados e 3 testes do Emulator ignorados porque `FIRESTORE_EMULATOR_HOST` não estava definido; `git diff --check` sem erros (avisos de normalização LF/CRLF).
+
+**Estado:** Fase 7 parcial, não aceita. Ainda falta revisar no Chrome os diálogos de prévia/cancelamento, cópia de evento local sorteado, proteção dos links ao tentar substituir rascunho e a cópia online → local mantendo a origem acessível. Também falta cobertura automatizada direta da prévia/cancelamento e erro de rascunho ausente. Nenhum deploy, envio WhatsApp ou acesso a serviço Firebase real foi feito.
+
+## 36. Planejamento da Fase 8 — 2026-11-12
+
+O usuário pediu registrar como próxima fase uma melhoria de ambiente com Docker e automação para preparar o projeto para Firebase. O plano agora inclui Compose local para Flutter Web, API Dart e Auth/Firestore Emulators; build repetível; pipeline de CI; configuração de Hosting/Firestore e entrega da API no Cloud Run; documentação de requisitos iniciais de projeto, IAM, Authentication, domínio e reversão.
+
+Ficou registrado que Firebase de produção é serviço gerenciado, não um serviço Firebase hospedado pelo Docker Compose. Os artefatos serão construídos/publicados separadamente: Web no Hosting e API no Cloud Run. A Fase 8 está apenas planejada, aguardando a conclusão/aceite da Fase 7 e autorização para implementação. Criação de projeto real, cobrança, aplicação de infraestrutura e deploy continuam fora do escopo autorizado.
+
+## 37. Diagnóstico de sorteio e vários eventos online — 2026-11-12
+
+O usuário relatou erro genérico ao criar sorteio online tanto de evento novo quanto de cópia local, e pediu criar/gerenciar múltiplos eventos e recuperar o anterior após reiniciar. A orientação curta de dois terminais omitiu a API Dart; o sorteio precisa do terceiro terminal (API na porta 8090). Além disso, o Flutter usava `localhost:8090` enquanto o servidor estava configurado para IPv4; o comando agora usa `127.0.0.1:8090`. Essas são causas prováveis do erro reportado; falta o usuário retestar com a API ativa.
+
+O armazenamento anterior usava uma única chave local `current` e não havia tela de lista; isso impedia criar e reabrir eventos online independentes. A Fase 7 foi ampliada a pedido do usuário para suportar vários rascunhos por ID, listar/reabrir eventos, preservar links de cada um e migrar o registro legado `current`. Os dados continuam locais à origem/perfil do navegador; não são sincronizados nem recuperáveis do Firestore em outro dispositivo.
+
+**Implementado nesta continuação:** repositório multi-rascunho; migração do antigo registro; nova tela lista de eventos online e rotas para criar/abrir por ID; cópia local → online cria evento separado; botões retornam à lista; cliente e tela distinguem API indisponível, 400, 401, 403, 409 e 500 com mensagens orientativas; documentação e comandos agora indicam três terminais e o endereço `127.0.0.1`.
+
+**Verificações desta continuação:** testes do repositório de rascunhos com 3 cenários passaram, incluindo dois eventos sem sobrescrever links e migração de `current`; `flutter analyze` sem issues; `flutter test` com 92 testes passando; `dart format --output=none --set-exit-if-changed .` verificou 118 arquivos sem alterações; `flutter build web --release` concluído em 77,7 s; `dart analyze` no servidor sem issues; `dart test` com 6 aprovados e 3 testes do Emulator ignorados por ausência de `FIRESTORE_EMULATOR_HOST`; `git diff --check` sem erros, com avisos Git de normalização LF/CRLF.
+
+**Pendente:** teste manual no Chrome com API ativa e parada; criação/reabertura de múltiplos eventos; conversões e preservação de links. A causa do erro original ainda é provável, não confirmada pelo usuário; a execução anterior de dois terminais realmente não iniciava a API, e a URL foi alinhada para IPv4 `127.0.0.1`. Fase 7 permanece parcial; sem Firebase real, deploy ou WhatsApp.
+
+## 38. Correção de saída e exclusão de eventos online — 2026-11-12
+
+O usuário relatou que “Sair” não atualizava a sessão e que não havia como cancelar/excluir um evento online. A tela lia `FirebaseAuth.currentUser` apenas durante o build, sem observar alterações posteriores; a lista de eventos também não oferecia exclusão.
+
+**Implementado:** a tela agora observa `authStateChanges`, aguarda `signOut` e atualiza o estado para oferecer novo login. A lista de eventos tem ação de exclusão com confirmação destrutiva. Para rascunho não enviado ao servidor, remove apenas o ID escolhido do IndexedDB. Para sorteio existente ou tentativa que possa ter criado registro remoto, exige login, pede à API a exclusão autenticada do documento do evento e dos resultados referenciados; o servidor usa um único commit condicionado ao `updateTime` e verifica a propriedade. O rascunho local só é removido após sucesso remoto. API inacessível, falta de sessão e falta de acesso mantêm o rascunho e mostram orientação. Cancelar o diálogo não altera dados. A exclusão é definitiva e os links daquele evento deixam de funcionar.
+
+**Verificações executadas:** `dart format --output=none --set-exit-if-changed .` verificou 118 arquivos sem mudanças; `flutter analyze` sem issues; `flutter test` com 92 testes passando; `flutter build web --release` concluído em 120,5 s (avisos informativos de dry-run Wasm e tree-shaking); `dart analyze` no servidor sem issues; `dart test` com 8 testes passando e 3 testes de integração ignorados por ausência de `FIRESTORE_EMULATOR_HOST`; testes novos cobrem autorização da exclusão pela API, invalidação de todos os links, commit Firestore atômico e isolamento ao excluir um rascunho local. `git diff --check` passou sem erros; Git emitiu apenas avisos de normalização LF/CRLF. Nenhuma publicação ou uso de Firebase real foi realizado.
+
+**Pendente à época desta alteração:** conferir no Chrome com Auth/Firestore Emulators o logout, cancelamento e confirmação da exclusão; os testes automatizados não substituem essa validação visual/ponta a ponta. A pendência foi resolvida pelo usuário conforme registrado na seção 39.
+
+## 39. Aceite da Fase 7 — 2026-11-12
+
+O usuário informou que concluiu todas as validações que faltavam e que tudo funcionou. Isso confirma os fluxos manuais no Chrome documentados nas seções 14 e 18 de `docs/TESTES.md`, incluindo retomada e isolamento de eventos online, conversão/cancelamento, desligamento da API, saída da conta e exclusão confirmada/cancelada com invalidação dos links do evento excluído.
+
+As verificações automatizadas da implementação mais recente foram registradas na seção 38: 92 testes Flutter, 8 testes do servidor, análises Flutter/Dart sem issues, formatação verificada e build Web release concluído. Três testes de integração do Firestore foram ignorados na execução local mais recente porque o Emulator não estava configurado; as validações manuais do usuário usaram os emuladores conforme o fluxo combinado. Não houve criação de Firebase de produção, deploy, commit/push ou envio real de WhatsApp.
+
+**Resultado:** Fase 7 aceita. A Fase 8 (Docker e automação para Firebase/Cloud Run) continua planejada e aguarda autorização explícita para implementação.

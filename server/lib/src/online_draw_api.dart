@@ -139,6 +139,26 @@ class OnlineDrawApi {
         }
         return;
       }
+      if (segments.length == 3 &&
+          segments[0] == 'v1' &&
+          segments[1] == 'events' &&
+          request.method == 'DELETE') {
+        final eventId = segments[2];
+        if (!_validId(eventId)) {
+          _send(request, HttpStatus.badRequest, {'error': 'invalid_event'});
+          return;
+        }
+        final deleted = await service.deleteEvent(
+          eventId: eventId,
+          ownerUid: ownerUid,
+        );
+        if (!deleted) {
+          _send(request, HttpStatus.forbidden, {'error': 'event_not_owned'});
+        } else {
+          _send(request, HttpStatus.ok, {'deleted': true});
+        }
+        return;
+      }
       _send(request, HttpStatus.notFound, {'error': 'not_found'});
     } on FormatException {
       _send(request, HttpStatus.badRequest, {'error': 'invalid_request'});

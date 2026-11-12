@@ -179,6 +179,10 @@ class _EventListPageState extends ConsumerState<EventListPage> {
                                       onEdit: () => context.push(
                                         '/events/${summary.event.id}/edit',
                                       ),
+                                      onCopyOnline: () => context.push(
+                                        '/online/new',
+                                        extra: summary.event.id,
+                                      ),
                                       onDelete: () => _deleteEvent(summary),
                                     );
                                   },
@@ -257,12 +261,14 @@ class _EventCard extends StatelessWidget {
     required this.summary,
     required this.onOpen,
     required this.onEdit,
+    required this.onCopyOnline,
     required this.onDelete,
   });
 
   final EventSummary summary;
   final VoidCallback onOpen;
   final VoidCallback onEdit;
+  final VoidCallback onCopyOnline;
   final VoidCallback onDelete;
 
   @override
@@ -323,6 +329,8 @@ class _EventCard extends StatelessWidget {
                 onSelected: (value) {
                   if (value == 'edit') {
                     onEdit();
+                  } else if (value == 'copy-online') {
+                    onCopyOnline();
                   } else if (value == 'delete') {
                     onDelete();
                   }
@@ -333,6 +341,14 @@ class _EventCard extends StatelessWidget {
                     child: ListTile(
                       leading: Icon(Icons.edit_outlined),
                       title: Text('Editar'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'copy-online',
+                    child: ListTile(
+                      leading: Icon(Icons.cloud_upload_outlined),
+                      title: Text('Copiar para evento online'),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),

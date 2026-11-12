@@ -172,4 +172,15 @@ class _MemoryOnlineDrawStore implements OnlineDrawStore {
   Future<void> revokeToken(String tokenHash) async {
     _results.remove(tokenHash);
   }
+
+  @override
+  Future<bool> deleteEvent({
+    required String eventId,
+    required String ownerUid,
+  }) async {
+    if (_owners[eventId] != ownerUid) return false;
+    _owners.remove(eventId);
+    _results.removeWhere((_, result) => result.eventId == eventId);
+    return true;
+  }
 }

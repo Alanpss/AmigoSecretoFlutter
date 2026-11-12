@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–6 aceitas pelo usuário. O modo online oferece API Dart, autenticação Firebase, armazenamento Firestore via REST, grupos e revelação por links individuais; fluxo e testes foram validados localmente com os Emulators. Nenhum projeto cloud foi configurado nem publicado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes e limitações.
+> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) planejada, aguardando autorização de implementação. O modo online foi validado localmente com Firebase Emulators. Nenhum projeto cloud real foi configurado nem publicado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
 
 ## Descrição para o GitHub
 
@@ -18,6 +18,7 @@ O projeto dá atenção especial à integridade do sorteio: restrições de grup
 
 - Aplicativo Web responsivo, com interface em português do Brasil.
 - Modo de evento online com sorteio no servidor e links individuais, validado localmente com Firebase Emulator; ainda não publicado.
+- Cópia e gerenciamento de eventos online independentes, com logout, exclusão confirmada que invalida os links do evento e cópia entre modos sem transferir resultados (Fase 7 aceita).
 - Cadastro de eventos, pessoas, participantes, responsáveis e grupos.
 - Busca, filtros e revisão das condições do evento.
 - Motor Dart puro com matching bipartido, diagnóstico e amostragem uniforme entre sorteios válidos.
@@ -140,8 +141,10 @@ No modo Emulator, o servidor usa o token local especial `owner` para simular a i
 Em outro terminal, a partir da raiz do repositório, execute o Flutter Web com os valores de Firebase fornecidos pelo projeto de desenvolvimento ou pelo Auth Emulator:
 
 ```powershell
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://localhost:8090 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
 ```
+
+Para criar um sorteio, mantenha **três terminais** abertos: Firebase Emulators, API Dart na porta 8090 e Flutter Web na porta 8081. Se os emuladores estiverem ligados mas a API não, o login e a edição do rascunho podem funcionar, porém a criação do sorteio falhará. Use `127.0.0.1` na URL da API para manter o mesmo endereço IPv4 configurado no ambiente local.
 
 Abra `http://127.0.0.1:8081` no Chrome. Emissor de link e navegador devem usar o mesmo host; nesta configuração, use `127.0.0.1` e não `localhost`.
 
@@ -175,7 +178,7 @@ O aplicativo **não usa IA durante a execução**. Ferramentas de IA são usadas
 
 ## Privacidade e limitações
 
-- Eventos locais ficam no navegador. No modo online, o servidor guarda resultados e hashes de links; o rascunho de participantes e os links gerados ficam localmente no mesmo navegador para retomada e não entram no backup local. Limpar os dados do site pode apagar esse rascunho. O organizador ou qualquer pessoa que obtenha um link bearer ainda poderá abrir aquele resultado.
+- Eventos locais ficam no navegador. No modo online, o servidor guarda resultados e hashes de links; os vários rascunhos de participantes e links gerados ficam localmente no mesmo navegador para retomada e não entram no backup local. Limpar os dados do site ou trocar a origem pode remover o acesso local. O organizador ou qualquer pessoa que obtenha um link bearer ainda poderá abrir aquele resultado.
 - O armazenamento Web não é criptografado. Limpar os dados do navegador ou mudar de origem pode remover o acesso aos eventos.
 - Telefones, responsáveis e resultados são dados pessoais. Use dados fictícios em desenvolvimento e guarde backups não criptografados em locais seguros.
 - Abrir o WhatsApp não comprova envio, entrega ou leitura. O projeto não automatiza o WhatsApp.

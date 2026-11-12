@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -11,9 +12,13 @@ import '../../groups/domain/group.dart';
 import '../data/firebase_configuration.dart';
 import '../data/online_draw_client.dart';
 import '../data/online_draw_draft_repository.dart';
+import '../data/online_draft_local_copy_repository.dart';
 
 class OnlineDrawPage extends ConsumerStatefulWidget {
-  const OnlineDrawPage({super.key});
+  const OnlineDrawPage({super.key, this.draftId, this.sourceLocalEventId});
+
+  final String? draftId;
+  final String? sourceLocalEventId;
 
   @override
   ConsumerState<OnlineDrawPage> createState() => _OnlineDrawPageState();
@@ -32,8 +37,12 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
   bool _draftReady = false;
   bool _draftSaved = false;
   bool _drawNeedsRefresh = false;
+  bool _needsPersonalDataConfirmation = false;
+  bool _remoteEventMayExist = false;
   String? _error;
   Timer? _saveTimer;
+  StreamSubscription<User?>? _authSubscription;
+  User? _user;
 
   OnlineDrawDraftRepository get _draftRepository =>
       OnlineDrawDraftRepository(ref.read(appDatabaseProvider).database);
@@ -41,11 +50,17 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
   @override
   void initState() {
     super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (mounted) setState(() => _user = user);
+    });
     unawaited(_restoreDraft());
   }
 
   Future<void> _restoreDraft() async {
-    final draft = await _draftRepository.load();
+    final draft = widget.draftId == null
+        ? null
+        : await _draftRepository.load(eventId: widget.draftId);
     if (!mounted) return;
     if (draft != null) {
       _eventName.text = draft['eventName'] as String? ?? '';
@@ -60,7 +75,8 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
           final row = _ParticipantInput(id: value['id'] as String?)
             ..name.text = value['name'] as String? ?? ''
             ..recipient.text = value['recipientName'] as String? ?? ''
-            ..phone.text = value['recipientPhoneE164'] as String? ?? '';
+            ..phone.text = value['recipientPhoneE164'] as String? ?? ''
+            ..isActive = value['isActive'] as bool? ?? true;
           _rows.add(row);
         }
         if (_rows.length < 2) _rows.add(_ParticipantInput());
@@ -103,6 +119,9 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
       _pairingRevision =
           draft['pairingRevision'] as int? ?? (_links.isNotEmpty ? 1 : 0);
       _drawNeedsRefresh = draft['drawNeedsRefresh'] as bool? ?? false;
+      _needsPersonalDataConfirmation =
+          draft['needsPersonalDataConfirmation'] as bool? ?? false;
+      _remoteEventMayExist = draft['remoteEventMayExist'] as bool? ?? false;
     }
     _eventName.addListener(_scheduleDraftSave);
     for (final row in _rows) {
@@ -115,6 +134,165 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
       _draftReady = true;
       _draftSaved = draft != null;
     });
+    if (widget.sourceLocalEventId != null) {
+      unawaited(_copyLocalEvent(widget.sourceLocalEventId!));
+    }
+  }
+
+  Future<void> _copyLocalEvent(String eventId) async {
+    final event = await ref.read(eventProvider(eventId).future);
+    final participants = await ref.read(participantsProvider(eventId).future);
+    final groups = await ref.read(groupsProvider(eventId).future);
+    if (!mounted) return;
+    final activeCount = participants
+        .where((p) => p.participant.isActive)
+        .length;
+    final contactCount = participants.where((p) => p.hasContact).length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Copiar para evento online?'),
+        content: Text(
+          'Será criada uma cópia de “${event.name}” com ${participants.length} '
+          'participantes ($activeCount ativos), $contactCount com contato e '
+          '${groups.length} grupos. A origem ficará intacta. Nomes e contatos serão enviados '
+          'ao serviço quando você confirmar o sorteio. Nenhum resultado '
+          'existente será copiado. Será criado um evento online separado.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirmar cópia'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    for (final row in _rows) {
+      row.dispose();
+    }
+    _rows.clear();
+    for (final view in participants) {
+      final recipient = view.guardian ?? view.person;
+      final row = _ParticipantInput(id: view.participant.id)
+        ..name.text = view.person.displayName
+        ..recipient.text = recipient.displayName
+        ..phone.text = recipient.phoneE164 ?? ''
+        ..isActive = view.participant.isActive;
+      _rows.add(row);
+      _addRowListeners(row);
+    }
+    if (_rows.length < 2) _rows.add(_ParticipantInput());
+    for (final group in _groups) {
+      group.dispose();
+    }
+    _groups
+      ..clear()
+      ..addAll([
+        for (final source in groups)
+          _OnlineGroupInput(
+            id: source.id,
+            name: source.name,
+            type: source.type,
+            restrictionEnabled: source.restrictionEnabled,
+            participantIds: source.memberParticipantIds.toSet(),
+          ),
+      ]);
+    for (final group in _groups) {
+      _addGroupListeners(group);
+    }
+    _eventName.text = event.name;
+    _links = [];
+    _createdEventId = null;
+    _pairingRevision = 0;
+    _revokedLinks.clear();
+    _drawNeedsRefresh = false;
+    _needsPersonalDataConfirmation = true;
+    _scheduleDraftSave();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _copyOnlineDraftToLocal() async {
+    final draft = await _draftRepository.load(
+      eventId: _createdEventId ?? _draftEventId,
+    );
+    if (draft == null) {
+      if (mounted) {
+        setState(
+          () => _error = 'Não há rascunho online salvo neste navegador.',
+        );
+      }
+      return;
+    }
+    final participants = (draft['participants'] as List? ?? const [])
+        .whereType<Map>()
+        .toList(growable: false);
+    final groups = (draft['groups'] as List? ?? const [])
+        .whereType<Map>()
+        .where((group) => (group['name'] as String? ?? '').trim().isNotEmpty)
+        .toList(growable: false);
+    final active = participants
+        .where((row) => row['isActive'] as bool? ?? true)
+        .length;
+    final contacts = participants
+        .where(
+          (row) => (row['recipientName'] as String? ?? '').trim().isNotEmpty,
+        )
+        .length;
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Criar cópia local?'),
+        content: Text(
+          'Será criado um novo evento local “${draft['eventName'] ?? ''}” '
+          'com ${participants.length} participantes ($active ativos), '
+          '$contacts destinatários e ${groups.length} grupos. O sorteio, os resultados e os links '
+          'online não serão copiados nem alterados. A cópia ficará como rascunho.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Criar cópia local'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final database = ref.read(appDatabaseProvider).database;
+      final eventId = await OnlineDraftLocalCopyRepository(database)
+          .createCopy(draft);
+      if (mounted) {
+        refreshEvents(ref);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cópia local criada como rascunho.')),
+        );
+        // Keep the online event and its links in place; open the copy separately.
+        context.push('/events/$eventId');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Não foi possível criar a cópia local. Confira os dados do rascunho e tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   void _addRowListeners(_ParticipantInput row) {
@@ -165,12 +343,24 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
 
   Future<void> _saveDraft() async {
     if (!_draftReady) return;
+    final hasContent =
+        _eventName.text.trim().isNotEmpty ||
+        _rows.any(
+          (row) =>
+              row.name.text.trim().isNotEmpty ||
+              row.recipient.text.trim().isNotEmpty ||
+              row.phone.text.trim().isNotEmpty,
+        ) ||
+        _groups.any((group) => group.name.text.trim().isNotEmpty) ||
+        _links.isNotEmpty;
+    if (!hasContent) return;
     try {
       await _draftRepository.save({
         'eventId': _createdEventId ?? _draftEventId,
         'eventName': _eventName.text,
         'pairingRevision': _pairingRevision,
         'drawNeedsRefresh': _drawNeedsRefresh,
+        'needsPersonalDataConfirmation': _needsPersonalDataConfirmation,
         'groups': [
           for (final group in _groups)
             {
@@ -188,6 +378,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
               'name': row.name.text,
               'recipientName': row.recipient.text,
               'recipientPhoneE164': row.phone.text,
+              'isActive': row.isActive,
             },
         ],
         // These are bearer links. Keep them on this device and exclude the
@@ -203,6 +394,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
             },
         ],
         'revokedUrls': _revokedLinks.toList(growable: false),
+        'remoteEventMayExist': _remoteEventMayExist,
       });
       if (mounted) setState(() => _draftSaved = true);
     } catch (_) {
@@ -213,6 +405,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    unawaited(_authSubscription?.cancel());
     unawaited(_saveDraft());
     _eventName.removeListener(_scheduleDraftSave);
     _eventName.dispose();
@@ -251,6 +444,27 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
     }
   }
 
+  Future<void> _signOut() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) setState(() => _user = null);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível sair da conta. Tente novamente.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _createDraw() async {
     final apiBaseUrl = const String.fromEnvironment('ONLINE_DRAW_API_BASE_URL');
     if (apiBaseUrl.isEmpty) {
@@ -277,6 +491,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
         });
         return;
       }
+      if (!row.isActive) continue;
       participants.add({
         'id': row.id,
         'name': name,
@@ -292,16 +507,20 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
     }
     final groups = <Map<String, Object?>>[];
     for (final group in _groups) {
-      if (group.name.text.trim().isEmpty || group.participantIds.length < 2) {
+      final activeMemberIds = group.participantIds
+          .where((id) => _rows.any((row) => row.id == id && row.isActive))
+          .toList(growable: false);
+      if (group.name.text.trim().isEmpty) {
         setState(() {
-          _error = 'Cada grupo precisa de um nome e pelo menos duas pessoas.';
+          _error = 'Cada grupo precisa de um nome.';
         });
         return;
       }
+      if (activeMemberIds.length < 2) continue;
       groups.add({
         'id': group.id,
         'name': group.name.text.trim(),
-        'participantIds': group.participantIds.toList(growable: false),
+        'participantIds': activeMemberIds,
         'isEnabled': group.restrictionEnabled,
       });
     }
@@ -316,6 +535,8 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
       );
       final eventId = _createdEventId ?? _draftEventId;
       final nextRevision = _pairingRevision + 1;
+      _remoteEventMayExist = true;
+      await _saveDraft();
       final links = await client.createDraw(
         eventId: eventId,
         pairingRevision: nextRevision,
@@ -329,6 +550,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
           _pairingRevision = nextRevision;
           _revokedLinks.clear();
           _drawNeedsRefresh = false;
+          _needsPersonalDataConfirmation = false;
         });
         await _saveDraft();
       }
@@ -336,6 +558,54 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
       if (mounted) {
         setState(() {
           _error = 'As restrições dos grupos não permitem completar o sorteio. Desative uma restrição, ajuste os grupos ou adicione participantes.';
+        });
+      }
+    } on OnlineDrawServiceUnavailableException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'Não foi possível alcançar a API do sorteio. Confirme que '
+              'o serviço Dart está rodando no terminal da API na porta 8090.';
+        });
+      }
+    } on OnlineDrawAuthenticationException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'Sua sessão não foi reconhecida pelo serviço. Saia e entre '
+              'novamente com o Google pelo Auth Emulator.';
+        });
+      }
+    } on OnlineDrawAccessException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'Esta sessão não tem acesso a este evento online. Entre '
+              'com a mesma conta usada para criá-lo.';
+        });
+      }
+    } on OnlineDrawConflictException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'O evento online mudou em outra sessão. Volte à lista, '
+              'abra o evento novamente e tente mais uma vez.';
+        });
+      }
+    } on OnlineDrawInvalidDataException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'O serviço rejeitou os dados do sorteio. Confira se há '
+              'pelo menos duas pessoas ativas, nomes e destinatários válidos.';
+        });
+      }
+    } on OnlineDrawServerException {
+      if (mounted) {
+        setState(() {
+          _error =
+              'A API recebeu o pedido, mas não conseguiu salvar o '
+              'sorteio. Confira se o Firestore Emulator está ativo e tente novamente.';
         });
       }
     } catch (_) {
@@ -355,6 +625,30 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
 
   Future<void> _confirmAndCreateDraw() async {
     if (_links.isEmpty) {
+      if (_needsPersonalDataConfirmation) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Enviar dados e sortear?'),
+            content: const Text(
+              'Os nomes e contatos desta cópia serão enviados ao serviço online '
+              'para criar o sorteio e os links individuais. O evento local '
+              'original permanecerá inalterado.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Voltar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Enviar e sortear'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+      }
       await _createDraw();
       return;
     }
@@ -482,9 +776,18 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
     if (!FirebaseConfiguration.isConfigured) {
       return const _OnlineSetupNotice();
     }
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _user;
     return Scaffold(
-      appBar: AppBar(title: const Text('Sorteio online')),
+      appBar: AppBar(
+        title: const Text('Sorteio online'),
+        actions: [
+          IconButton(
+            tooltip: 'Voltar à lista de eventos online',
+            onPressed: () => context.go('/online'),
+            icon: const Icon(Icons.list_alt),
+          ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -520,6 +823,15 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
                   'Conectado como ${user.displayName ?? user.email ?? 'organizador'}',
                 ),
                 const SizedBox(height: 4),
+                if (_draftReady)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _busy ? null : _copyOnlineDraftToLocal,
+                      icon: const Icon(Icons.download_outlined),
+                      label: const Text('Copiar rascunho para evento local'),
+                    ),
+                  ),
                 Text(
                   !_draftReady
                       ? 'Carregando rascunho…'
@@ -576,6 +888,19 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
                             decoration: const InputDecoration(
                               labelText: 'WhatsApp do destinatário (opcional, formato +5511999999999)',
                             ),
+                          ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Participa do sorteio'),
+                            value: _rows[index].isActive,
+                            onChanged: !_draftReady
+                                ? null
+                                : (value) {
+                                    setState(
+                                      () => _rows[index].isActive = value,
+                                    );
+                                    _scheduleDraftSave();
+                                  },
                           ),
                           if (_rows.length > 2)
                             Align(
@@ -746,7 +1071,7 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => FirebaseAuth.instance.signOut(),
+                  onPressed: _busy ? null : _signOut,
                   child: const Text('Sair'),
                 ),
               ],
@@ -817,6 +1142,7 @@ class _ParticipantInput {
   final name = TextEditingController();
   final recipient = TextEditingController();
   final phone = TextEditingController();
+  bool isActive = true;
   void dispose() {
     name.dispose();
     recipient.dispose();
