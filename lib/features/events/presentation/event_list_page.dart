@@ -105,6 +105,7 @@ class _EventListPageState extends ConsumerState<EventListPage> {
                       _Header(
                         total: summaries.length,
                         onCreate: () => context.push('/events/new'),
+                        onCreateOnline: () => context.push('/online'),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -197,10 +198,15 @@ class _EventListPageState extends ConsumerState<EventListPage> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.total, required this.onCreate});
+  const _Header({
+    required this.total,
+    required this.onCreate,
+    required this.onCreateOnline,
+  });
 
   final int total;
   final VoidCallback onCreate;
+  final VoidCallback onCreateOnline;
 
   @override
   Widget build(BuildContext context) {
@@ -225,10 +231,21 @@ class _Header extends StatelessWidget {
             ),
           ],
         ),
-        FilledButton.icon(
-          onPressed: onCreate,
-          icon: const Icon(Icons.add),
-          label: const Text('Criar evento'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              onPressed: onCreate,
+              icon: const Icon(Icons.add),
+              label: const Text('Evento local'),
+            ),
+            OutlinedButton.icon(
+              onPressed: onCreateOnline,
+              icon: const Icon(Icons.link),
+              label: const Text('Evento online'),
+            ),
+          ],
         ),
       ],
     );

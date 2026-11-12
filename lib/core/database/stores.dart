@@ -22,3 +22,7 @@ final StoreRef<String, Map<String, Object?>> assignmentsStore =
     stringMapStoreFactory.store('assignments');
 final StoreRef<String, Map<String, Object?>> deliveriesStore =
     stringMapStoreFactory.store('deliveries');
+
+/// Organizer draft for the online flow. Kept out of the local backup format.
+final StoreRef<String, Map<String, Object?>> onlineDraftsStore =
+    stringMapStoreFactory.store('onlineDrafts');

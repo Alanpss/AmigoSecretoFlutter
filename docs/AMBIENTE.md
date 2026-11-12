@@ -11,7 +11,7 @@ Este documento é a fonte de verdade para **ferramentas, versões, instalação 
 | Flutter SDK | **3.47.9 stable instalado** em `%USERPROFILE%\development\flutter` |
 | Dart | **3.13.7** (incluído no Flutter) |
 | DevTools | 2.60.0 |
-| Java/JDK | Não instalado (desnecessário para Web) |
+| Java/JDK | Eclipse Temurin 21.0.13 instalado posteriormente para Firebase Emulator |
 | Android SDK/Studio | Não instalado (fora do MVP desta fase) |
 | Git | 2.49.0.windows.1 |
 | Chrome | 156.0.8078.80 |
@@ -20,7 +20,7 @@ Este documento é a fonte de verdade para **ferramentas, versões, instalação 
 | Espaço livre em `C:` | 156,1 GB no início da instalação |
 | Backend | Não será usado no MVP |
 
-**Resultado da instalação:** ZIP oficial de 1.849,6 MB, SHA-256 conferido (`d8e2b5977e09082c6440f89dc1aa887b94c8fbcc3b39222797046295a3f68a9e`), extração em `%USERPROFILE%\development\flutter` e inclusão de `...\flutter\bin` no `PATH` do usuário.
+**Resultado da instalação:** ZIP oficial de 1.849,6 MB, SHA-256 conferido (`d8e2b5977e09082c6440f89dc1aa887b94c8fbcc3b39222797046295a3f68a9e`), extração em `%USERPROFILE%\development\flutter` e inclusão de `...\flutter\bin` no `PATH` do usuário. Em 2026-11-12, Eclipse Temurin JDK 21.0.13 foi instalado para os emuladores e configurado na sessão PowerShell com `JAVA_HOME` e `PATH`.
 
 A plataforma inicial recomendada é **Flutter Web**. Isso permite começar sem JDK, Android SDK, emulador ou assinatura de APK. O Android fica para uma fase posterior, se autorizado.
 
@@ -51,7 +51,7 @@ A plataforma inicial recomendada é **Flutter Web**. Isso permite começar sem J
 ### 2.3 Não instalar sem necessidade demonstrada
 
 - `get_it`, `freezed`, `json_serializable`, `drift`, `shared_preferences`;
-- Firebase, serviços de nuvem, analytics ou backend;
+- serviços de nuvem e deploy (não criar projeto nem publicar sem autorização);
 - automação não oficial do WhatsApp;
 - Android SDK, emulador ou Android Studio antes da fase correspondente.
 
@@ -335,6 +335,14 @@ Registrado em `docs/PROGRESSO.md`: versões exatas, avisos aceitos, resultados e
 - Não publicar, fazer deploy ou enviar mensagens reais sem autorização.
 - Não alterar o `README.md` removido, `.vs/` ou `EstudoEntityFramework/` na raiz do repositório.
 
-## 12. Serviço Dart (Fase 6)
+## 12. Modo online (Fase 6, em andamento)
 
-O pacote compartilhado `packages/draw_engine` é Dart puro, sem dependência Flutter. `server/` é um pacote Dart separado e usa `crypto` para armazenar hashes de tokens bearer e `test` para a suíte. Configure com `dart pub get` a partir de `server/` e execute com `dart test`. Firebase Authentication/Firestore Emulator e Cloud Run ainda não foram adicionados à configuração local; serão registrados quando essa integração for implementada. Não é necessário criar projeto Google/Firebase nesta etapa.
+O pacote `packages/draw_engine` é Dart puro e compartilhado pelo Flutter e por `server/`. O pacote Dart do servidor usa `crypto`, `http` e `test`; executa separadamente com `dart pub get`, `dart analyze` e `dart test` dentro de `server/`. A API usa Firebase Authentication para validar ID tokens e Firestore REST; em Cloud Run, usa o token de identidade de serviço obtido no servidor de metadados, sem chave privada em arquivo.
+
+O app Flutter usa `firebase_core`, `firebase_auth` e `http`. Firebase recebe opções em tempo de execução por `--dart-define`, sem arquivo `firebase_options.dart` local com credenciais. Definições necessárias: `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_PROJECT_ID`, `ONLINE_DRAW_API_BASE_URL`; para emuladores, `USE_FIREBASE_EMULATORS=true`. A tela do organizador só fica habilitada quando a configuração Firebase está presente.
+
+`firebase.json` configura Authentication e Firestore Emulator (portas 9099 e 8080) e regras que negam todo acesso do cliente a documentos privados. `firestore.rules` deve permanecer restritivo: o serviço usa identidade administrativa e contorna as regras. No Emulator, `server/bin/server.dart` envia o token local especial `owner`; fora do Emulator usa token de identidade de serviço do Cloud Run. `server/Dockerfile` prepara uma imagem para Cloud Run, mas não foi buildada nem publicada.
+
+Para validar localmente, instale Firebase CLI e Java, execute `firebase emulators:start --only auth,firestore --project demo-amigosecreto`, configure `FIREBASE_AUTH_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`, `GOOGLE_CLOUD_PROJECT`, `FIREBASE_WEB_API_KEY`, `PUBLIC_BASE_URL` e `PORT=8090`, inicie `dart run bin/server.dart` em `server/`, e execute Flutter Web com as opções `--dart-define` documentadas no README. A porta 8090 é da API; Firestore Emulator usa 8080 e Flutter Web usa 8081. Use apenas o projeto `demo-*` e dados fictícios. No Windows do usuário, em 2026-11-12, Firebase CLI 15.36.0 e Temurin JDK 21.0.13 iniciaram Auth/Firestore Emulator; Node 26.13.1 instalou a CLI com aviso `EBADENGINE` para `superstatic`, mas os emuladores funcionaram. O teste `server/test/firestore_emulator_integration_test.dart` executa regras, lote de 200 documentos e concorrência contra o Emulator; os testes unitários do adaptador continuam usando HTTP falso.
+
+Versões resolvidas em 2026-11-05: `firebase_core 5.1.0`, `firebase_auth 7.0.1`, `http 1.6.0` no app; `http 1.6.0`, `crypto 3.0.6` no servidor. Consulte `pubspec.lock` de cada pacote para o conjunto completo.

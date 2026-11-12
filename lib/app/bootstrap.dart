@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sembast/sembast.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../core/database/app_database.dart';
 import '../core/database/database_factory.dart';
@@ -15,6 +17,7 @@ import '../shared/widgets/empty_state.dart';
 import 'app.dart';
 import 'providers.dart';
 import 'theme.dart';
+import '../features/online_draw/data/firebase_configuration.dart';
 
 /// Abre o banco e inicia o aplicativo.
 ///
@@ -24,6 +27,12 @@ Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    if (FirebaseConfiguration.isConfigured && Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(options: FirebaseConfiguration.options);
+      if (const bool.fromEnvironment('USE_FIREBASE_EMULATORS')) {
+        await FirebaseAuth.instance.useAuthEmulator('127.0.0.1', 9099);
+      }
+    }
     final database = await AppDatabase.open();
     runApp(
       ProviderScope(

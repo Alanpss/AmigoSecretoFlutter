@@ -1,16 +1,16 @@
 # Progresso
 
-**Última atualização:** 2026-11-05
-**Fase atual:** Fase 6 — Sorteio online com links individuais **em andamento**
-**Próxima fase:** A definir após a Fase 6
-**Implementação:** Fases 1–4 aceitas/liberadas; Fase 5 aceita pelo usuário em 2026-11-05 com revisão manual confirmada; Fase 6 autorizada explicitamente pelo usuário em 2026-11-05
+**Última atualização:** 2026-11-12
+**Fase atual:** Fase 6 — Sorteio online com links individuais **aceita pelo usuário**
+**Próxima fase:** Não definida nem autorizada
+**Implementação:** Fases 1–6 aceitas/liberadas; a implementação da conversão entre modos permanece para fase futura
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
 
 Este documento é a fonte de verdade para o **estado real do trabalho** e para o ponto exato de retomada. Em caso de divergência com outros documentos, vale o que está registrado aqui; o conflito deve ser resolvido antes de continuar.
 
 ## 1. Situação em uma frase
 
-As Fases 1 a 5 estão aceitas, com as limitações de verificação manual descritas abaixo. A Fase 6 foi autorizada: criar o modo online com sorteio no servidor e revelação por links individuais. A primeira entrega extraiu o motor Dart puro e adicionou a camada inicial do serviço de domínio.
+As Fases 1 a 6 foram aceitas pelo usuário, com limitações de verificação registradas. O modo online tem API, autenticação, persistência e UI para grupos e links individuais; os fluxos manuais e automatizados da Fase 6 foram concluídos com dados fictícios no Auth/Firestore Emulator.
 
 ## 2. Situação por fase
 
@@ -22,11 +22,11 @@ As Fases 1 a 5 estão aceitas, com as limitações de verificação manual descr
 | 3 — Sorteio e integridade | Aceita | Testes automatizados passaram; usuário confirmou revisão manual de teclado, foco, leitor de tela e contraste | Nenhuma |
 | 4 — WhatsApp e entregas | Liberada para transição pelo usuário | Link aberto manualmente com contato fictício; nenhum envio feito. Após redirecionamento do WhatsApp, emojis apareceram como caractere de substituição; investigar antes de considerar essa experiência validada | Verificar o comportamento em navegador compatível e corrigir se reproduzível no URI gerado pelo app |
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
-| 6 — Sorteio online e links individuais | Em andamento, autorizada em 2026-11-05 | Motor Dart compartilhado e serviço de domínio com links bearer/revogação; testes passaram | Implementar API HTTP, autenticação Google e adaptador Firestore local via Emulator |
+| 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 
 ## 3. Ponto exato de retomada
 
-O usuário autorizou a Fase 5 em 2026-11-03 e aceitou seu resultado em 2026-11-05. Em 2026-11-04, o navegador abriu o link click-to-chat com telefone fictício, mas a página do WhatsApp exibiu emojis como caracteres de substituição depois do redirecionamento; nenhum envio foi feito. Publicação e envio real continuam fora do escopo.
+Fase 6 aceita em 2026-11-12 depois que o usuário confirmou os quatro cenários manuais restantes no Chrome. Não há fase seguinte autorizada. A conversão entre modos foi decidida como cópia no ADR-007, mas sua implementação depende de planejamento e autorização futuros. Nenhum projeto cloud foi criado, nenhum deploy feito e nenhuma mensagem real enviada.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -405,3 +405,83 @@ A Fase 6 implementará um modo de evento online separado dos eventos locais. O s
 **Limites desta entrega:** ainda não há servidor HTTP, autenticação Google, persistência Firestore, regras de segurança, UI de evento online nem Firebase Emulator. O serviço de domínio usa armazenamento injetado; não pode receber tráfego de produção.
 
 **Próximo passo exato:** implementar API HTTP local e testar seu contrato, adicionar verificação de ID token Firebase e adaptador Firestore pelo Emulator. Só depois integrar a UI; nenhuma criação de projeto cloud ou publicação sem autorização.
+
+## 27. Continuação da Fase 6 — API, Firebase e primeira UI
+
+**Implementado nesta continuação:**
+
+- API HTTP Dart em `server/`: sorteio autenticado por evento, revelação pública individual e revogação restrita ao organizador dono do evento. Respostas do organizador incluem somente participante, destinatário, telefone opcional e URL; respostas públicas incluem somente participante e destinatário sorteado.
+- Validação Firebase ID token via Firebase Authentication account lookup; autenticação inválida recebe 401, evento alheio recebe 403 e tokens inválidos/revogados recebem 404 sem detalhes.
+- `FirestoreOnlineDrawStore` usando REST, com hash de token como ID de documento, gravação em lote atômica, precondição de `updateTime` e avanço de `pairingRevision`. Token de acesso de produção vem da identidade de serviço do Cloud Run.
+- `firebase.json`, `firestore.rules` (nega todo acesso via cliente), e `server/Dockerfile` para preparar a hospedagem e o serviço sem criar projeto nem publicar.
+- Flutter tem entrada separada de evento online, login Google, formulário de participantes/destinatário/WhatsApp/grupos, ação manual para abrir o WhatsApp, botão de revogar com confirmação e rota de revelação. Opções Firebase e URL da API são `--dart-define`; sem elas a parte local segue disponível.
+- README e documentos de ambiente/arquitetura atualizados com comandos locais e privacidade.
+
+**Verificações executadas nesta continuação:**
+
+| Verificação | Comando | Resultado |
+| --- | --- | --- |
+| Análise Flutter | `flutter analyze` | Sem issues |
+| Testes Flutter | `flutter test` | 87 testes passaram |
+| Formatação | `dart format --output=none --set-exit-if-changed .` | 112 arquivos, 0 alterações |
+| Build Web | `flutter build web --release` | Concluído em 125,9 s; avisos informativos Wasm dry-run e tree-shaking |
+| Análise do servidor | `dart analyze` em `server/` | Sem issues |
+| Testes do servidor | `dart test` em `server/` | 6 testes passaram: API HTTP, Firestore REST simulado e 200 participantes |
+| Binário do servidor | `dart compile exe bin/server.dart -o $env:TEMP\online-draw-server-check.exe` | Compilado; executável temporário removido depois da verificação |
+| Diff | `git diff --check` | Sem erros; Git só avisou normalização LF/CRLF em arquivos alterados |
+
+Firebase CLI e Java não estão disponíveis no ambiente; nenhum Firebase Emulator foi iniciado. Nenhuma chamada a projeto cloud foi feita. A primeira análise Flutter encontrou issues de estilo/layout e o teste inicial do adaptador detectou contagem de requests errada no próprio teste; tudo foi corrigido antes da execução final acima.
+
+**Limitações e próximo passo exato:** o armazenamento foi validado contra HTTP simulado, ainda não contra o Firestore Emulator; login Google/Hosting também depende de projeto Firebase local ou demo e não foi verificado no navegador. Repetir análise/testes/build do app, corrigir falhas e executar Emulator (Auth e Firestore), cenário ponta a ponta e revisão Chrome. Confirmar que grupos, limites, HTTP responses e erros funcionam no fluxo visual. Fase 6 permanece parcial; não criar projeto Google nem fazer deploy sem autorização específica.
+
+## 28. Pedido de transição após a Fase 6 — 2026-11-11
+
+O usuário pediu para iniciar a próxima fase. A transição não foi feita porque a Fase 6 continua parcial pelos critérios da seção 9 e não existe escopo/critério de aceite definido para uma Fase 7. O próximo trabalho autorizado permanece fechar a verificação da Fase 6 com Firebase Emulator e fluxo no Chrome, sem criar projeto cloud ou fazer deploy. Depois do aceite da Fase 6, definir e autorizar a próxima fase no plano antes de implementá-la.
+
+## 29. Correção do rascunho do modo online — 2026-11-11
+
+O usuário informou que participantes adicionados pareciam não salvar. A análise confirmou que o formulário online guardava os campos somente nos controladores da tela até concluir o sorteio; sair da rota ou recarregar descartava o rascunho. O cadastro de participante local continua persistindo pela sua própria camada Sembast.
+
+**Correção:** adicionado o store local `onlineDrafts`, com salvamento automático do nome, participantes, destinatários, telefones, texto dos grupos e, após o sorteio, links/revogações. A tela restaura o rascunho ao reabrir na mesma origem/dispositivo. Esse store não foi adicionado à lista explícita do `BackupService`, portanto backup JSON não contém links bearer. Rascunhos não sincronizam entre dispositivos e limpar os dados do site os remove. Corrigida também a porta de API no README: API 8090, Firestore Emulator 8080 e Flutter Web 8081.
+
+**Verificação executada:** `flutter analyze` sem issues; `flutter test` com 88 testes passando, incluindo teste de restauração do rascunho e exclusão do backup; `flutter build web --release` concluído em 82,1 s; `dart format --output=none --set-exit-if-changed .` sem mudanças. O Emulator/browser continuam pendentes conforme seção 27.
+
+## 30. Preparação do roteiro de validação do Emulator — 2026-11-11
+
+Ao detalhar a validação, foi identificado que o servidor usava chamadas Firestore sem credencial no Emulator, mas `firestore.rules` nega todo acesso do cliente. `server/bin/server.dart` agora usa o token local `owner` somente quando `FIRESTORE_EMULATOR_HOST` está configurado; fora do Emulator continua usando o token metadata do Cloud Run. O roteiro passo a passo foi adicionado em `docs/TESTES.md`, incluindo leitura REST anônima esperada como 403. Firebase CLI/JDK e Emulator não estão disponíveis aqui, então esse caminho ainda precisa ser executado pelo usuário.
+
+**Verificações após o ajuste:** `dart analyze` sem issues em `server/`; `dart test` com 6 testes passando; `dart format --output=none --set-exit-if-changed .` sem alterações; `git diff --check` limpo (avisos apenas de normalização CRLF do Git). Permanecem pendentes o fluxo real no Emulator/Chrome, teste automatizado de regras e teste de concorrência/lote Firestore com 200 resultados.
+
+## 31. Validação manual do fluxo de links no Firebase Emulator — 2026-11-12
+
+O usuário iniciou Auth e Firestore Emulator com o projeto fictício `demo-amigosecreto`, executou `dart analyze` (sem issues) e `dart test` no serviço (6 testes passaram), e iniciou a API local na porta 8090. O Flutter não conseguiu iniciar o Chrome com o dispositivo `chrome`; com `-d web-server --web-hostname 127.0.0.1 --web-port 8081`, o usuário abriu o app manualmente no Chrome.
+
+**Validação manual confirmada pelo usuário:** login Google simulado pelo Auth Emulator com identidade fictícia; geração de links; cada link abriu somente seu resultado em janela anônima, sem login; reabertura manteve o resultado; revogação bloqueou o link; botão WhatsApp preparou somente o link e nenhuma mensagem foi enviada. O link gerado inicialmente com `localhost` não abriu nesse servidor ligado a IPv4 `127.0.0.1`; usar `http://127.0.0.1:8081` como `PUBLIC_BASE_URL` e abrir sempre essa mesma origem resolveu o teste. O roteiro em `docs/TESTES.md` foi ajustado para registrar essa configuração e o fallback de navegador realmente usado.
+
+**Testes automatizados adicionados e executados nesta sessão:** `dart analyze` em `server/` sem issues; `dart test` em `server/` com as variáveis do Emulator configuradas: 9 testes passaram, incluindo negação de leitura/escrita anônimas pelas regras, lote real de 200 resultados e conflito concorrente de `pairingRevision` com apenas um vencedor. O novo teste é ignorado quando `FIRESTORE_EMULATOR_HOST` não está configurado. A suíte inicialmente falhou ao carregar o teste por avaliar o host nulo antes de aplicar o `skip`; a inicialização foi corrigida e a execução repetida passou.
+
+**Estado:** implementação e critérios automatizados do Firestore estão verificados localmente, mas a Fase 6 ainda não está aceita. Permanecem pendentes na interface do Chrome o token inventado e o sorteio impossível (três participantes no mesmo grupo restrito). Nenhum recurso cloud foi criado, deploy realizado ou mensagem enviada.
+
+## 32. Ajustes da experiência online — 2026-11-12
+
+O usuário informou que não conseguiu configurar os grupos online e que a tela não permitia cancelar/refazer o sorteio. A inspeção confirmou que o serviço já aplicava os grupos recebidos, mas a tela exigia texto manual no formato `nome: pessoa, pessoa`, sem edição de tipo ou restrição, desabilitava o botão após gerar links e sempre enviava `pairingRevision = 1`.
+
+**Implementado:** a tela agora permite criar grupos do tipo Família/Casal/Outro, escolher participantes, ativar ou desativar a restrição e salvar esses dados no rascunho local. As restrições ativas são enviadas ao mesmo motor Dart usado pelo modo local. Grupos online são separados dos grupos de eventos locais. Depois de um sorteio, alterações mostram aviso e a ação “Refazer sorteio e invalidar links atuais” pede confirmação. A nova chamada avança a revisão; o commit do Firestore substitui resultados e remove hashes antigos atomicamente. A tela informa que somente o organizador precisa entrar; cada link individual continua sem exigir login. Respostas `draw_impossible` agora produzem orientação para rever grupos/participantes.
+
+**Verificações executadas:** `flutter analyze` sem issues; `flutter test` com 88 testes passando; `flutter build web --release` concluído em 70,0 s; `dart analyze` em `server/` sem issues; `dart test test/firestore_emulator_integration_test.dart --reporter expanded` com 3 testes passando no Emulator, incluindo avanço de revisão e ausência dos resultados anteriores; `dart format` no novo arquivo de teste sem alterações pendentes.
+
+**Pendente:** revisão manual no Chrome desta nova tela e do fluxo de refazer; também token inventado e sorteio impossível no formulário. A ferramenta de controle do navegador não conseguiu confirmar com segurança a URL da janela Chrome e encerrou a inspeção; nenhuma interação foi feita. O usuário pode atualizar o app em execução com `r` no terminal do Flutter e continuar em `http://127.0.0.1:8081`. Nenhum recurso cloud foi criado, deploy realizado ou mensagem real enviada.
+
+## 33. Decisão de conversão entre modos — 2026-11-12
+
+O usuário confirmou que conversão local ↔ online será uma cópia, preservando o evento de origem. Registrei em ADR-007: copiar cadastro, contatos/destinatários e grupos após revisão; gerar um sorteio novo no modo de destino; nunca transportar os pares existentes; não revogar links da origem silenciosamente. A conversão online → local depende dos dados cadastrais disponíveis no rascunho local e não recuperará pares do servidor.
+
+Essa decisão não amplia a Fase 6 ativa. A implementação requer uma fase futura com critérios de aceite para prévia, confirmação do envio de dados pessoais local → servidor, duplicidades e disponibilidade do rascunho na conversão online → local. Nenhum código de conversão ou recurso externo foi criado nesta entrega documental.
+
+## 34. Aceite da Fase 6 — 2026-11-12
+
+O usuário informou que realizou e aprovou as quatro validações manuais pendentes: configuração de grupos e restrições no online, refazer o sorteio invalidando os links da revisão anterior, resposta segura para token inventado e bloqueio amigável de um sorteio impossível sem gerar links. Com as validações principais já confirmadas anteriormente e a suíte automatizada passando, o usuário autorizou concluir a Fase 6.
+
+**Evidências automatizadas registradas nesta fase:** Flutter `analyze` sem issues; `flutter test` com 88 testes; build Web release concluído; `dart analyze` sem issues em `server/`; suíte do servidor com 9 testes passando contra o Firestore Emulator, incluindo regras de acesso, lote de 200 resultados e concorrência de revisão; formatação verificada em 115 arquivos sem alterações; `git diff --check` sem erros (avisos de normalização LF/CRLF do Git).
+
+**Resultado:** Fase 6 aceita pelo usuário. A experiência online continua localmente validada com emuladores; projeto Firebase real, domínio e deploy não foram configurados nem publicados, conforme escopo. O próximo passo é definir e autorizar uma fase futura; ADR-007 registra a conversão como cópia preservando a origem e criando um novo sorteio.

@@ -100,12 +100,58 @@ void main() {
       await service.revoke(token);
       expect(await service.reveal(token), isNull);
     });
+
+    test('gera links individuais para 200 participantes sem persistir pares na resposta', () async {
+      var tokenIndex = 0;
+      final participants = [
+        for (var index = 0; index < 200; index++)
+          OnlineParticipant(
+            id: 'p$index',
+            name: 'Pessoa $index',
+            recipientName: 'Pessoa $index',
+            recipientPhoneE164: null,
+          ),
+      ];
+      final service = OnlineDrawService(
+        store: store,
+        publicBaseUrl: 'https://test.example',
+        tokenFactory: () => 'token-${++tokenIndex}'.padRight(40, 'x'),
+      );
+      final links = await service.createDraw(
+        eventId: 'event-large',
+        pairingRevision: 1,
+        request: DrawRequest(
+          participantIds: participants.map((p) => p.id).toList(),
+          groups: const [],
+        ),
+        participants: participants,
+      );
+      expect(links, hasLength(200));
+      expect(store.lastSavedResults, hasLength(200));
+      expect(links.map((link) => link.url).toSet(), hasLength(200));
+    });
   });
 }
 
 class _MemoryOnlineDrawStore implements OnlineDrawStore {
   Map<String, StoredDrawResult> lastSavedResults = {};
   final Map<String, StoredDrawResult> _results = {};
+  final Map<String, String> _owners = {};
+
+  @override
+  Future<bool> claimEvent({
+    required String eventId,
+    required String ownerUid,
+  }) async {
+    final current = _owners.putIfAbsent(eventId, () => ownerUid);
+    return current == ownerUid;
+  }
+
+  @override
+  Future<bool> isEventOwnedBy({
+    required String eventId,
+    required String ownerUid,
+  }) async => _owners[eventId] == ownerUid;
 
   @override
   Future<void> saveDraw({

@@ -63,6 +63,14 @@ class StoredDrawResult {
 }
 
 abstract interface class OnlineDrawStore {
+  /// Claims an event for the organizer, or confirms its existing owner.
+  Future<bool> claimEvent({required String eventId, required String ownerUid});
+
+  Future<bool> isEventOwnedBy({
+    required String eventId,
+    required String ownerUid,
+  });
+
   Future<void> saveDraw({
     required String eventId,
     required int pairingRevision,
@@ -206,4 +214,8 @@ class OnlineDrawService {
 
 class OnlineDrawImpossibleException implements Exception {
   const OnlineDrawImpossibleException();
+}
+
+class OnlineDrawConflictException implements Exception {
+  const OnlineDrawConflictException();
 }

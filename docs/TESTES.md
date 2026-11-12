@@ -445,3 +445,71 @@ O serviço `server/` usa `dart test` e a suíte Flutter continua sendo executada
 - UI verifica que a lista do organizador não recebe pares e WhatsApp contém somente links;
 - revogação invalida o link sem expor resultado;
 - nenhum serviço real ou mensagem WhatsApp é usado em testes.
+- rascunho online é restaurado no mesmo banco local e não é incluído no backup JSON.
+
+### Verificações locais da primeira integração (2026-11-05)
+
+Executados com dados fictícios: `flutter analyze` sem issues; a suíte inicial da integração online executou 87 testes e a verificação de rascunho local posterior elevou a suíte a 88, todos passando; `dart format --output=none --set-exit-if-changed .` sem alterações; `flutter build web --release` concluído; `dart analyze` em `server/` sem issues; `dart test` em `server/` com 6 testes passando, incluindo API HTTP, posse do evento, revelação/revogação, fluxo REST Firestore simulado e 200 participantes. O teste do rascunho confirma que a tela restaura os dados locais e que nome/link bearer não entram no backup JSON.
+
+Os testes unitários do adaptador REST usam um servidor HTTP falso. A integração real com Firestore Emulator é coberta separadamente pelo teste `server/test/firestore_emulator_integration_test.dart`; o build Web sozinho não demonstra login nem acesso ao Emulator.
+
+### Roteiro manual — Auth/Firestore Emulator e Chrome
+
+Use exclusivamente dados fictícios e o projeto demo abaixo. O prefixo `demo-` faz com que a suíte use emuladores em vez de recursos ativos; o Auth Emulator oferece fluxo OAuth simulado para o `signInWithPopup` Web. Consulte os passos oficiais de [instalação do Emulator Suite](https://firebase.google.com/docs/emulator-suite/install_and_configure), [Auth Emulator](https://firebase.google.com/docs/emulator-suite/connect_auth) e [testes de regras](https://firebase.google.com/docs/rules/unit-tests).
+
+1. Instale Node.js 18+ (com npm), JDK 11+ e Firebase CLI (`npm install -g firebase-tools`). Confira com `node --version`, `npm --version`, `java -version` e `firebase --version`. Não execute `firebase login` nem selecione projeto real para este teste.
+2. Terminal 1, raiz do repositório: `firebase emulators:start --only auth,firestore --project demo-amigosecreto`. Aguarde Auth `9099`, Firestore `8080` e UI `4000`. O Emulator carrega `firestore.rules` a partir de `firebase.json`.
+3. Terminal 2, configure e inicie a API:
+
+   ```powershell
+   Set-Location C:\workspace\repositories\AmigoSecreto\server
+   $env:GOOGLE_CLOUD_PROJECT = 'demo-amigosecreto'
+   $env:FIREBASE_WEB_API_KEY = 'demo-key'
+   $env:FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099'
+   $env:FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
+   $env:PUBLIC_BASE_URL = 'http://127.0.0.1:8081'
+   $env:PORT = '8090'
+   dart pub get
+   dart analyze
+   dart test
+   dart run bin/server.dart
+   ```
+
+   No Emulator, o serviço envia o token administrativo local `owner`; o valor é usado só quando `FIRESTORE_EMULATOR_HOST` está definido. Em Cloud Run, o serviço usa a identidade anexada.
+4. Terminal 3, raiz do repositório, inicie o app:
+
+   ```powershell
+   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://localhost:8090 --dart-define=USE_FIREBASE_EMULATORS=true
+   ```
+
+   Se o Flutter não conseguir iniciar o Chrome automaticamente, mantenha o comando `web-server` ativo e abra manualmente `http://127.0.0.1:8081` no Chrome. Use `127.0.0.1` também nos links gerados; `localhost` e `127.0.0.1` são origens diferentes no navegador e podem resolver para interfaces de rede distintas.
+
+5. Na página “Evento online”, entre por Google usando o fluxo simulado pelo Auth Emulator. Não use sua conta Google real. Cadastre quatro pessoas fictícias (Ana Teste, Bruno Teste, Caio Teste, Dora Teste) e destinatários diretos fictícios. Em “Grupos e restrições”, crie grupos dos tipos Família, Casal e Outro, selecione integrantes e alterne a opção “Impedir sorteios dentro do grupo”. Aguarde “Rascunho salvo neste dispositivo”, recarregue a rota e confirme que participantes, grupos, tipos, membros e opções de restrição retornam.
+6. Gere o sorteio. Confirme que a lista contém participante, destinatário e link, mas não mostra quem cada um tirou. Abra os links em uma janela anônima do Chrome, sem login: cada link deve revelar um resultado; recarregar o mesmo link deve manter esse resultado. Um token inventado deve mostrar link indisponível.
+7. Volte à página do organizador, revogue um link com confirmação e reabra esse link anonimamente. Deve aparecer link indisponível. No botão WhatsApp, confirme que a mensagem tem apenas o link; feche a página do WhatsApp sem enviar.
+8. Edite os dados ou a restrição do grupo após o sorteio. Confirme que a tela avisa que os links atuais ainda mostram o sorteio anterior. Escolha “Refazer sorteio e invalidar links atuais” e confirme. Os links da revisão anterior devem deixar de funcionar; os novos links devem revelar um único resultado cada. A nova lista exige encaminhar os links novamente.
+9. Teste regra Firestore sem autenticação (PowerShell):
+
+   ```powershell
+   curl.exe -s -o NUL -w "%{http_code}`n" `
+     "http://127.0.0.1:8080/v1/projects/demo-amigosecreto/databases/(default)/documents/events"
+   ```
+
+   Resultado esperado: `403`. A API do servidor é autorizada; o cliente anônimo deve ser bloqueado pelas regras fechadas.
+10. Teste sorteio impossível em uma sessão nova: cadastre três pessoas fictícias e coloque as três no mesmo grupo com restrição ativa. O app deve explicar que as regras não permitem concluir o sorteio e não deve gerar links. Desative a restrição e confirme que é possível sortear.
+11. Opcionalmente, consulte Emulator UI em `http://127.0.0.1:4000` para inspecionar documentos gravados. Use somente os nomes fictícios acima. Encerre os emuladores com `Ctrl+C` em Terminal 1.
+
+### Testes automatizados contra o Firestore Emulator
+
+Com Auth/Firestore Emulator ativo, execute em outro terminal:
+
+```powershell
+Set-Location C:\workspace\repositories\AmigoSecreto\server
+$env:GOOGLE_CLOUD_PROJECT = 'demo-amigosecreto'
+$env:FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
+dart test test/firestore_emulator_integration_test.dart --reporter expanded
+```
+
+O teste usa somente documentos fictícios e valida leitura/escrita anônimas negadas pelas regras, gravação e leitura de 200 resultados reais no Emulator, e concorrência na revisão: somente uma gravação com a mesma revisão vence e a revisão seguinte permanece utilizável. Sem `FIRESTORE_EMULATOR_HOST`, esses cenários são ignorados; a suíte Dart normal continua executando os testes unitários com HTTP simulado.
+
+**Resultado manual informado pelo usuário em 2026-11-12:** fluxo de links/revelação/revogação; edição de grupos e estado de restrição; refazer sorteio com invalidação da revisão anterior; token inventado indisponível; sorteio impossível explica o problema e não gera links. Todos passaram no Chrome com dados fictícios. Nenhum envio WhatsApp foi realizado.

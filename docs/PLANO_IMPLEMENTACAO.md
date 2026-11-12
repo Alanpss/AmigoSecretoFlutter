@@ -667,6 +667,9 @@ A Fase 5 e o MVP são aceitos quando todos os critérios acima forem demonstrado
 - cada participante recebe um token aleatório de alta entropia; o link retorna apenas o resultado correspondente;
 - links podem ser reabertos e revogados; mensagens de prévia não contêm o resultado;
 - a área do organizador mostra participante, destinatário e link; WhatsApp abre com somente o link e exige envio manual;
+- grupos online são configurados no próprio evento, com tipo, seleção de membros e restrição ativa/inativa; as regras ativas são aplicadas pelo motor compartilhado, sem importar automaticamente os grupos locais;
+- refazer um sorteio exige confirmação, avança a revisão no servidor e invalida os links/resultados antigos antes de apresentar os novos;
+- somente o organizador entra para administrar o evento; cada participante abre seu link individual sem login;
 - backup local não exporta os resultados dos eventos online;
 - link é bearer: qualquer pessoa que o obtenha pode abrir aquele resultado, inclusive o organizador, conforme escolha do usuário.
 
@@ -680,14 +683,17 @@ A Fase 5 e o MVP são aceitos quando todos os critérios acima forem demonstrado
 - fluxo completo usa Firebase Emulator/serviço local e dados fictícios; nenhum envio WhatsApp é feito;
 - documentação de privacidade, configuração e custos é atualizada; `flutter analyze`, format, testes e build passam.
 
-**Estado da primeira entrega autorizada:**
+**Implementação e aceite da Fase 6:**
 
 - [x] Extrair o motor de sorteio para `packages/draw_engine` Dart puro, mantendo os imports do app por exports.
 - [x] Criar `OnlineDrawService` testável que gera tokens, persiste hashes, retorna somente links e revoga tokens.
 - [x] Cobrir revelação individual, invalidação de token, 200 participantes no motor e regressão do app.
-- [ ] Criar API HTTP, autenticação Firebase e persistência Firestore testável pelo Emulator.
+- [x] Criar API HTTP, autenticação Firebase e persistência Firestore testável pelo Emulator.
+- [x] Integrar tela online com grupos configuráveis, restrições ativas/inativas, login do organizador e links individuais.
+- [x] Permitir refazer sorteio com confirmação, revisão nova e invalidação dos links antigos.
+- [x] Validar regras, gravação de 200 resultados, concorrência, token inválido, restrições impossíveis e fluxo manual no Chrome.
 
-O primeiro portão passou: app, motor e domínio do serviço foram analisados e testados. A continuação integra API, autenticação e Firestore antes de adicionar a UI.
+Em 2026-11-12, o usuário confirmou as validações manuais restantes e aceitou a Fase 6. Nenhum projeto Firebase real foi criado e nenhum deploy foi executado; publicação exige autorização separada. A conversão entre modos está registrada no ADR-007 e não faz parte desta fase.
 
 ---
 
@@ -718,6 +724,7 @@ Uma fase só é considerada concluída quando:
 | --- | --- | --- |
 | Confirmar Flutter Web como plataforma inicial | Antes da Fase 1 | Web primeiro; Android depois |
 | Android dentro do MVP | Antes da Fase 1 | Fora do MVP |
+| Conversão local ↔ online | Decisão de produto registrada em ADR-007; implementação depende de fase futura autorizada | Copiar preservando a origem e sortear novamente no destino |
 | Onde publicar a versão Web | Antes da Fase 5 | Definir somente com autorização |
 | Limite de participantes para aceite | Antes da Fase 3 | 200 ativos |
 | Exclusão definitiva ou arquivamento | Antes da Fase 2 | Exclusão com confirmação |

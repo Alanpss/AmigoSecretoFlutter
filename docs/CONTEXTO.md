@@ -70,6 +70,7 @@ No modo local, o organizador pode acessar todos os resultados. No modo online, a
 | Confirmação de envio | Manual, pelo organizador | O app não tem como provar envio/entrega pelo número pessoal. |
 | Resultados | Ocultos por padrão, revelação individual | Reduz exposição acidental em telas compartilhadas. |
 | Backup | JSON versionado, sensível, com exportação/importação | Única forma prática de recuperar dados locais. |
+| Conversão entre modos | Copiar para um novo evento, preservar a origem e sortear novamente no destino | Evita migração destrutiva e não transfere atribuições conhecidas do modo local para o online. |
 
 ## 5. Premissas adotadas
 

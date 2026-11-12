@@ -148,6 +148,7 @@ Convenções: **DEVE** é obrigatório; **NÃO DEVE** é proibido; **PODE** é o
 - **RF-ONL-08:** botão WhatsApp pré-preenche somente o link; o organizador confirma o envio manualmente e a aplicação não envia automaticamente.
 - **RF-ONL-09:** backup local não inclui nem exporta resultados ou links de eventos online.
 - **RF-ONL-10:** interface informa que qualquer pessoa que obtiver um link pode abrir aquele resultado.
+- **RF-ONL-11:** o rascunho do formulário online DEVE ser restaurado no mesmo dispositivo/origem após reabrir a tela; rascunhos e links bearer ficam fora do backup local e não são sincronizados entre dispositivos.
 
 ## 3. Regras de negócio detalhadas
 
