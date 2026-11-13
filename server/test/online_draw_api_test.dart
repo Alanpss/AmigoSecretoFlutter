@@ -30,6 +30,17 @@ void main() {
 
   tearDown(() => server.close());
 
+  test('endpoint de saúde responde sem autenticação', () async {
+    final client = HttpClient();
+    final request = await client.getUrl(baseUri.resolve('/health'));
+    final response = await request.close();
+    expect(response.statusCode, HttpStatus.ok);
+    expect(jsonDecode(await response.transform(utf8.decoder).join()), {
+      'status': 'ok',
+    });
+    client.close(force: true);
+  });
+
   test(
     'autentica organizador e nunca devolve destinatários do sorteio',
     () async {

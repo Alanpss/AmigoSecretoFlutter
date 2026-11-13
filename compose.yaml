@@ -1,0 +1,110 @@
+services:
+  emulators:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.emulators
+    command:
+      - firebase
+      - emulators:start
+      - --only
+      - auth,firestore
+      - --project
+      - demo-amigosecreto
+      - --config
+      - firebase.docker.json
+      - --import=/data
+      - --export-on-exit=/data
+      - --non-interactive
+    ports:
+      - "127.0.0.1:9099:9099"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - emulator-data:/data
+      - emulator-cache:/root/.cache/firebase/emulators
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const n=require('node:net'); Promise.all([9099,8080].map(p=>new Promise((r,j)=>{const s=n.connect(p,'127.0.0.1',()=>{s.end();r()});s.on('error',j)}))).then(()=>process.exit(0)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 90s
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      GOOGLE_CLOUD_PROJECT: demo-amigosecreto
+      FIREBASE_WEB_API_KEY: demo-key
+      FIREBASE_AUTH_EMULATOR_HOST: emulators:9099
+      FIRESTORE_EMULATOR_HOST: emulators:8080
+      PUBLIC_BASE_URL: http://127.0.0.1:8081
+      HOST: 0.0.0.0
+      PORT: 8090
+    depends_on:
+      emulators:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8090:8090"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      args:
+        FIREBASE_API_KEY: ${FIREBASE_API_KEY:-demo-key}
+        FIREBASE_APP_ID: ${FIREBASE_APP_ID:-demo-app}
+        FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID:-demo-sender}
+        FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-demo-amigosecreto.firebaseapp.com}
+        FIREBASE_PROJECT_ID: demo-amigosecreto
+        ONLINE_DRAW_API_BASE_URL: http://127.0.0.1:8090
+        USE_FIREBASE_EMULATORS: "true"
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:80"
+
+  flutter-tests:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      target: flutter-toolchain
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        dart format --output=none --set-exit-if-changed . &&
+        flutter analyze && flutter test &&
+        flutter build web --release
+        --dart-define=FIREBASE_API_KEY=demo-key
+        --dart-define=FIREBASE_APP_ID=demo-app
+        --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender
+        --dart-define=FIREBASE_AUTH_DOMAIN=demo-amigosecreto.firebaseapp.com
+        --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto
+        --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090
+        --dart-define=USE_FIREBASE_EMULATORS=true
+
+  api-tests:
+    profiles: [test]
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: build
+    working_dir: /workspace/server
+    entrypoint: ["dart"]
+    command: ["test"]
+    environment:
+      GOOGLE_CLOUD_PROJECT: demo-amigosecreto
+      FIRESTORE_EMULATOR_HOST: emulators:8080
+    depends_on:
+      emulators:
+        condition: service_healthy
+
+volumes:
+  emulator-data:
+  emulator-cache:

@@ -24,7 +24,7 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Aceita pelo usuário em 2026-11-05; automação não validou Edge/leitor de tela/zoom |
 | 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Aceita pelo usuário em 2026-11-12 |
 | 7 | Cópia e gestão de eventos online | Conversão local ↔ online e vários eventos online independentes, persistidos e reabríveis | Fase 6 aceita; autorização “pode iniciar a próxima fase” em 2026-11-12; ampliação pedida em 2026-11-12 | Autorizada; em andamento |
-| 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita; planejada a pedido do usuário em 2026-11-12; autorização de implementação pendente | Planejada; aguarda Fase 7 e autorização |
+| 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita e commitada; autorização do usuário em 2026-11-12 | Em andamento |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -761,7 +761,7 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 
 ## 11. Fase 8 — Ambiente Docker e automação de publicação
 
-**Situação:** adicionada ao plano a pedido do usuário em 2026-11-12. A Fase 7 foi aceita em 2026-11-12; implementação da Fase 8 ainda não autorizada.
+**Situação:** autorizada pelo usuário em 2026-11-12 após o commit da Fase 7 (`b5b9b68`). Compose, imagens, CI e workflow manual de staging foram preparados. Validação conteinerizada local executada em 2026-11-13; falta conferir o fluxo visual no Chrome e validar o workflow de CI em execução. Staging continua separado e sem execução.
 
 **Objetivo:** tornar o ambiente reproduzível com Docker para desenvolvimento/teste e preparar a compilação e publicação dos artefatos Flutter Web e API Dart nos serviços gerenciados Firebase Hosting e Cloud Run.
 
@@ -787,19 +787,21 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 
 ### 11.3 Critérios de aceite planejados
 
-- [ ] Em máquina limpa com Docker, `docker compose up --build` inicia Web, API e Auth/Firestore Emulators usando somente configurações fictícias.
+- [x] Em máquina com Docker, `docker compose up --build` inicia Web, API e Auth/Firestore Emulators usando somente configurações fictícias; os serviços locais ficaram saudáveis e responderam nos endpoints definidos.
 - [ ] O fluxo de login do Auth Emulator, persistência Firestore Emulator e API funciona pela Web local; testes de regra e sorteio continuam passando.
-- [ ] Build Web e imagem da API são reproduzíveis; a API escuta `PORT` e passa health check no contêiner.
+- [x] Build Web e imagem da API foram construídos; a API escuta `PORT` e passou o health check no contêiner.
 - [ ] O build Flutter usa configuração Firebase não secreta injetada por ambiente no momento de build; nenhum segredo ou dado pessoal é embutido em `build/web`.
-- [ ] Configuração Firebase Hosting aponta para o artefato correto, mantém fallback SPA e aplica somente regras Firestore aprovadas.
+- [x] Configuração Firebase Hosting aponta para `build/web`, mantém fallback SPA e o workflow publica Hosting e regras Firestore apenas no projeto de staging configurado.
 - [ ] Pipeline executa format/análise/testes/build e publica preview/staging somente no ambiente configurado, com produção bloqueada até aprovação explícita.
 - [ ] Identidade de execução Cloud Run usa privilégios mínimos; não existe chave privada de conta de serviço em arquivo/imagem.
-- [ ] `.gitignore`/`.dockerignore` excluem `.env`, credenciais, banco local, backups e artefatos locais.
-- [ ] Documentação contém setup inicial, comandos locais, secrets/configuração, deploy, smoke test e reversão.
-- [ ] `flutter analyze`, `flutter test`, `dart analyze`, `dart test`, build Web e build/execução de contêiner aplicáveis passam.
-- [ ] Nenhum recurso de produção foi criado/publicado durante a implementação da fase sem autorização própria.
+- [x] `.gitignore`/`.dockerignore` excluem `.env`, credenciais, banco local, backups e artefatos locais.
+- [x] Documentação contém setup inicial, comandos locais, secrets/configuração, deploy, smoke test e reversão.
+- [x] `flutter analyze`, `flutter test`, `dart analyze`, `dart test`, build Web e build/execução de contêiner aplicáveis passaram localmente; os testes Dart passaram com o Firestore Emulator real.
+- [x] Nenhum recurso de produção foi criado/publicado durante a implementação da fase sem autorização própria.
 
 **Verificação e portão:** revisão local e CI com Docker e emuladores primeiro; implantação em staging só depois de o usuário fornecer/autorizar o projeto e a configuração necessários. Produção, custos e abertura pública exigem autorização explícita separada.
+
+**Estado da implementação (2026-11-13):** Compose validado e stack executado localmente; perfis de testes Flutter e API passaram, incluindo Emulator e build Web. A integração visual via Chrome e a execução do CI no GitHub ainda não foram validadas. O workflow de staging não foi acionado e nenhum recurso real foi criado. A Fase 8 permanece parcial até a conferência manual do fluxo Web e a validação do CI; o commit da fase anterior é `b5b9b68`.
 
 ---
 

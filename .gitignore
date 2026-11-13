@@ -48,6 +48,15 @@ app.*.map.json
 .widget_preview/
 
 # Dados locais e backups (nunca versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+**/service-account*.json
+**/*firebase-adminsdk*.json
+**/credentials*.json
 *.db
 *.db-journal
 *.sqlite
@@ -55,3 +64,4 @@ app.*.map.json
 *.backup.json
 amigo-secreto-backup-*.json
 backups/
+firebase-emulator-data/

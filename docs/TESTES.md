@@ -525,3 +525,30 @@ Validação manual confirmada pelo usuário em 2026-11-12: entrar com a identida
 **Retomada de sorteios:** crie os Emulators, a API e o Flutter em três terminais conforme os passos 2–4 acima. A API é necessária para o sorteio e precisa permanecer ativa na porta 8090; verifique com `Test-NetConnection 127.0.0.1 -Port 8090`. Para validar apenas cópias e gerenciar rascunhos, não é necessário confirmar/enviar sorteio. A URL da API e a URL pública dos links usam `127.0.0.1` para evitar resolução diferente de `localhost`.
 
 **Gestão de vários eventos online:** na raiz do app, abra a lista “Eventos online”, crie dois eventos fictícios, aguarde o rascunho salvar, atualize a página e reabra cada um. Confirme que nomes, participantes, revisões e links correspondem ao evento selecionado; refazer/revogar um evento não deve alterar o outro. O teste deve usar a mesma origem do navegador (`http://127.0.0.1:8081`); trocar entre `localhost` e `127.0.0.1`, porta, perfil ou navegador acessa outro IndexedDB.
+
+## 19. Fase 8 — Docker e automação
+
+Com Docker Desktop instalado e iniciado, na raiz do repositório:
+
+```powershell
+Copy-Item .env.example .env
+docker compose config
+docker compose up --build --detach
+docker compose ps
+docker compose --profile test run --build --rm flutter-tests
+docker compose --profile test run --build --rm api-tests
+curl.exe --fail http://127.0.0.1:8090/health
+curl.exe --fail http://127.0.0.1:8081/
+```
+
+Fluxo esperado: Emulators ficam saudáveis antes da API; API responde `{ "status": "ok" }`; Web abre em `127.0.0.1:8081`, login usa Auth Emulator e sorteio persiste no Firestore Emulator. `api-tests` inclui os testes de integração reais do Emulator porque define `FIRESTORE_EMULATOR_HOST`. O UI está em `http://127.0.0.1:4000`. Use apenas `demo-amigosecreto` e participantes fictícios.
+
+`docker compose down` preserva os volumes de dados/cache. `docker compose down --volumes` apaga os dados locais dos emuladores; use apenas quando decidir limpar o ambiente de teste. Não envie os arquivos de dados dos volumes ao Git.
+
+CI: `.github/workflows/verify.yml` repete formatação, análise, testes, build e smoke test em PR/push. O workflow `.github/workflows/deploy-staging.yml` não roda automaticamente e não foi testado contra cloud. Para aceitá-lo, um administrador deve configurar Environment `staging`, revisores, Workload Identity Federation, service accounts e variáveis listadas em `docs/DEPLOY.md`. Não execute staging até revisar o projeto e conceder autorização específica; produção permanece fora desta fase sem novo aceite.
+
+**Tentativa de validação em 2026-11-12:** `docker --version`, `docker compose version` e `docker info` não puderam executar porque `docker` não está no PATH. Também verifiquei os caminhos padrão do Docker Desktop e do Podman; nenhum executável foi encontrado e `podman` não está disponível. Assim, `docker compose config`, os builds/serviços e os health checks seguem pendentes até que um Docker Engine esteja instalado e iniciado neste ambiente. O workflow cloud de staging continua manual e sem execução.
+
+Como verificações independentes de contêiner, foram executados no host: `dart format --output=none --set-exit-if-changed .` (118 arquivos, nenhum alterado), `flutter analyze` (sem issues), `flutter test` (92 passaram), `flutter build web --release` (concluído), `dart analyze` em `server/` (sem issues) e `dart test` em `server/` (9 passaram; 3 testes do Firestore Emulator ignorados porque `FIRESTORE_EMULATOR_HOST` não foi definido). `java -version` também falha por Java ausente do PATH; os três testes de integração precisam do Emulator e permanecem pendentes. `git diff --check` terminou sem erros, com avisos de normalização LF/CRLF.
+
+**Validação com Docker em 2026-11-13:** `docker compose config` passou; `docker compose up --build --detach` concluiu depois dos ajustes descritos em `docs/PROGRESSO.md`. Os três serviços ficaram `healthy`; API respondeu `{"status":"ok"}` e Web/Auth/Firestore responderam HTTP 200. `docker compose --profile test run --build --rm flutter-tests` passou: formatação (118 arquivos, 0 alterados), análise Flutter sem issues, 92 testes e build Web release (93,7 s). `docker compose --profile test run --build --rm api-tests` passou com 12 testes, incluindo os 3 testes de integração do Firestore Emulator (regras, lote de 200 resultados e concorrência). A conferência visual/interativa da Web no Chrome não foi concluída: a ferramenta de automação encerrou a ação porque não conseguiu identificar com confiança a URL atual do navegador. A resposta HTTP 200 confirma o serviço web, mas não substitui a conferência da interface/autenticação/persistência pelo navegador.

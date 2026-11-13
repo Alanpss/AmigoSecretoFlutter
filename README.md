@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) planejada, aguardando autorização de implementação. O modo online foi validado localmente com Firebase Emulators. Nenhum projeto cloud real foi configurado nem publicado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
+> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O modo online foi validado localmente com Firebase Emulators. Nenhum projeto cloud real foi configurado nem publicado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
 
 ## Descrição para o GitHub
 
@@ -147,6 +147,29 @@ flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define
 Para criar um sorteio, mantenha **três terminais** abertos: Firebase Emulators, API Dart na porta 8090 e Flutter Web na porta 8081. Se os emuladores estiverem ligados mas a API não, o login e a edição do rascunho podem funcionar, porém a criação do sorteio falhará. Use `127.0.0.1` na URL da API para manter o mesmo endereço IPv4 configurado no ambiente local.
 
 Abra `http://127.0.0.1:8081` no Chrome. Emissor de link e navegador devem usar o mesmo host; nesta configuração, use `127.0.0.1` e não `localhost`.
+
+### Subir o ambiente de desenvolvimento com Docker
+
+Com Docker Desktop aberto e o Docker Compose disponível, na raiz do repositório:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up --build --detach
+docker compose ps
+```
+
+Abra o app em `http://127.0.0.1:8081` e o Emulator UI em `http://127.0.0.1:4000`. A API fica em `http://127.0.0.1:8090`; Auth e Firestore Emulators usam `9099` e `8080`. O stack usa apenas o projeto `demo-amigosecreto` e valores fictícios. Portas são vinculadas ao loopback local. Rascunhos e dados do Emulator persistem em volumes Docker.
+
+Execute as verificações nos contêineres:
+
+```powershell
+docker compose --profile test run --build --rm flutter-tests
+docker compose --profile test run --build --rm api-tests
+```
+
+Encerre os serviços com `docker compose down`. Isso mantém o volume de dados dos emuladores; `docker compose down --volumes` também o apaga. Não use essa opção se quiser preservar seus dados de teste.
+
+O workflow `.github/workflows/verify.yml` repete build/testes em PR e push para `main`. O workflow manual de staging está separado e exige confirmação explícita e variáveis de ambiente configuradas no GitHub. Ele não é executado pela CI normal; produção não está automatizada.
 
 No formulário online, os grupos são configurados separadamente dos eventos locais: escolha o tipo, marque os participantes e indique se a restrição está ativa. Após um sorteio, “Refazer sorteio e invalidar links atuais” pede confirmação e gera uma nova revisão; os links antigos deixam de funcionar. O organizador precisa entrar para gerenciar o evento, mas participantes abrem seus links sem login.
 

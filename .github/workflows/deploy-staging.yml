@@ -1,0 +1,143 @@
+name: Deploy staging (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_staging:
+        description: Type yes to deploy this revision to the configured staging project
+        required: true
+        type: choice
+        options: [no, yes]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-staging:
+    if: ${{ inputs.confirm_staging == 'yes' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    environment: staging
+    timeout-minutes: 45
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_DEPLOYER_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+      ARTIFACT_REGISTRY_REPOSITORY: ${{ vars.ARTIFACT_REGISTRY_REPOSITORY }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIREBASE_WEB_API_KEY: ${{ vars.FIREBASE_WEB_API_KEY }}
+      FIREBASE_APP_ID: ${{ vars.FIREBASE_APP_ID }}
+      FIREBASE_MESSAGING_SENDER_ID: ${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+      FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate staging configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WORKLOAD_IDENTITY_PROVIDER \
+            GCP_DEPLOYER_SERVICE_ACCOUNT CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT \
+            ARTIFACT_REGISTRY_REPOSITORY CLOUD_RUN_SERVICE FIREBASE_PROJECT_ID \
+            FIREBASE_WEB_API_KEY FIREBASE_APP_ID FIREBASE_MESSAGING_SENDER_ID \
+            FIREBASE_AUTH_DOMAIN PUBLIC_BASE_URL; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Configure the staging variable: ${name}"
+              exit 1
+            fi
+          done
+          if [[ "$GCP_PROJECT_ID" != "$FIREBASE_PROJECT_ID" ]]; then
+            echo "::error::The GCP and Firebase project IDs must match for staging."
+            exit 1
+          fi
+          if [[ "$PUBLIC_BASE_URL" != https://* ]]; then
+            echo "::error::PUBLIC_BASE_URL must be an HTTPS staging origin."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud with Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Build and publish API image to staging Artifact Registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPOSITORY}/${CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker build --file server/Dockerfile --tag "$IMAGE" .
+          docker push "$IMAGE"
+          echo "API_IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy API to the configured staging Cloud Run service
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --image "$API_IMAGE" \
+            --service-account "$CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT" \
+            --allow-unauthenticated \
+            --port 8080 \
+            --set-env-vars "GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID},FIREBASE_WEB_API_KEY=${FIREBASE_WEB_API_KEY},PUBLIC_BASE_URL=${PUBLIC_BASE_URL}"
+          API_URL="$(gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          if [[ "$API_URL" != https://* ]]; then
+            echo "::error::Cloud Run did not return an HTTPS service URL."
+            exit 1
+          fi
+          echo "ONLINE_DRAW_API_BASE_URL=$API_URL" >> "$GITHUB_ENV"
+
+      - name: Build Flutter Web with non-secret staging Firebase config
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --file docker/Dockerfile.web \
+            --target flutter-toolchain --tag amigo-secreto-flutter-toolchain .
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE/build:/workspace/build" \
+            --env FIREBASE_API_KEY --env FIREBASE_APP_ID \
+            --env FIREBASE_MESSAGING_SENDER_ID --env FIREBASE_AUTH_DOMAIN \
+            --env FIREBASE_PROJECT_ID --env ONLINE_DRAW_API_BASE_URL \
+            --entrypoint /bin/sh amigo-secreto-flutter-toolchain -lc '
+              flutter build web --release \
+                --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+                --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
+                --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
+                --dart-define=FIREBASE_AUTH_DOMAIN="$FIREBASE_AUTH_DOMAIN" \
+                --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
+                --dart-define=ONLINE_DRAW_API_BASE_URL="$ONLINE_DRAW_API_BASE_URL" \
+                --dart-define=USE_FIREBASE_EMULATORS=false
+            '
+
+      - name: Install Firebase CLI
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global firebase-tools@15.36.0
+
+      - name: Publish Hosting and Firestore rules to staging only
+        run: firebase deploy --only hosting,firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive
+
+      - name: Smoke test staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error "${ONLINE_DRAW_API_BASE_URL}/health"
+          curl --fail --silent --show-error --output /dev/null "${PUBLIC_BASE_URL}/"

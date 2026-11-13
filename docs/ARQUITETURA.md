@@ -622,6 +622,15 @@ Não criar interfaces para tudo; apenas para bordas de plataforma ou aleatorieda
 - O rascunho registra quando uma tentativa já pode ter criado o documento remoto; a exclusão é idempotente se o documento não chegou a ser criado, e nunca permite apagar documento de outro organizador.
 - A tela do organizador observa `FirebaseAuth.authStateChanges`; a ação sair aguarda o logout e atualiza imediatamente o estado de sessão exibido.
 - A tela traduz erros HTTP conhecidos e falha de conexão da API em instruções seguras; detalhes de exceção, payload e telefones não são mostrados.
+
+### 13.2 Ambiente Docker e build/deploy
+
+- `compose.yaml` inicia `web`, `api` e o serviço `emulators`; os serviços só são publicados na interface de loopback do host. `firebase.docker.json` permite que os containers da API alcancem Auth/Firestore na rede interna do Compose, sem mudar a configuração dos emuladores locais fora do Docker.
+- `docker/Dockerfile.web` baixa Flutter 3.47.9 do arquivo oficial e verifica o SHA-256 antes de compilar. Firebase client config e URL da API são argumentos de build, valores públicos no bundle Web; `.env.example` contém apenas valores `demo-*`.
+- `server/Dockerfile` usa Dart SDK 3.13.7 para build e imagem runtime mínima com health check HTTP. O token da API em produção vem da identidade anexada ao Cloud Run; nenhuma chave privada é copiada na imagem.
+- `docker/Dockerfile.emulators` fixa a versão do Firebase CLI e instala Node/JDK dentro do contêiner. O volume nomeado mantém dados e downloads dos emuladores entre reinícios.
+- `.github/workflows/verify.yml` define CI para build/test local. `.github/workflows/deploy-staging.yml` fica restrito a acionamento manual e Environment `staging`, autentica com Workload Identity Federation e separa a imagem API do artefato Hosting. Nenhum deploy é automático em pull request ou push.
+- Health check da API (`GET /health`) retorna apenas status e não acessa ou revela dados do Firestore.
 - O esquema online atual não possui data do evento nem apelido independente; esses campos não existem para copiar nesse sentido. O nome exibido do participante é copiado como nome.
 
 ## 14. Acessibilidade e responsividade

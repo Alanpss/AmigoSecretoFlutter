@@ -335,7 +335,7 @@ Registrado em `docs/PROGRESSO.md`: versões exatas, avisos aceitos, resultados e
 - Não publicar, fazer deploy ou enviar mensagens reais sem autorização.
 - Não alterar o `README.md` removido, `.vs/` ou `EstudoEntityFramework/` na raiz do repositório.
 
-## 12. Modo online (Fase 6 aceita; Fase 7 em validação)
+## 12. Modo online (Fases 6 e 7 aceitas; Fase 8 em implementação)
 
 O pacote `packages/draw_engine` é Dart puro e compartilhado pelo Flutter e por `server/`. O pacote Dart do servidor usa `crypto`, `http` e `test`; executa separadamente com `dart pub get`, `dart analyze` e `dart test` dentro de `server/`. A API usa Firebase Authentication para validar ID tokens e Firestore REST; em Cloud Run, usa o token de identidade de serviço obtido no servidor de metadados, sem chave privada em arquivo.
 
@@ -343,7 +343,11 @@ O app Flutter usa `firebase_core`, `firebase_auth` e `http`. Firebase recebe op�
 
 `firebase.json` configura Authentication e Firestore Emulator (portas 9099 e 8080) e regras que negam todo acesso do cliente a documentos privados. `firestore.rules` deve permanecer restritivo: o serviço usa identidade administrativa e contorna as regras. No Emulator, `server/bin/server.dart` envia o token local especial `owner`; fora do Emulator usa token de identidade de serviço do Cloud Run. `server/Dockerfile` prepara uma imagem para Cloud Run, mas não foi buildada nem publicada.
 
-A Fase 8 foi planejada para adicionar Docker Compose local com Flutter Web, API Dart e Firebase Emulators, além de pipeline de build/deploy para Hosting e Cloud Run. A configuração Hosting já existe em `firebase.json`. Docker não hospeda os serviços Firebase de produção. Nenhum projeto real, billing, imagem publicada ou deploy está autorizado/realizado neste momento; consultar `docs/PLANO_IMPLEMENTACAO.md` seção 11.
+A Fase 8 está em andamento para adicionar Docker Compose local com Flutter Web, API Dart e Firebase Emulators, além de pipeline de build/deploy para Hosting e Cloud Run. A configuração Hosting já existe em `firebase.json`. Docker não hospeda os serviços Firebase de produção. Nenhum projeto real, billing, imagem publicada ou deploy está autorizado/realizado neste momento; consultar `docs/PLANO_IMPLEMENTACAO.md` seção 11.
+
+O stack Compose está descrito em `compose.yaml`: Web em `127.0.0.1:8081`, API em `127.0.0.1:8090`, Auth Emulator em `9099`, Firestore Emulator em `8080` e UI em `4000`. Copie `.env.example` para `.env` e use `docker compose up --build --detach`; `docker compose down` preserva os volumes do Emulator. O modo de teste usa os perfis `flutter-tests` e `api-tests`. A imagem Flutter baixa o SDK oficial 3.47.9 e valida o SHA-256 publicado pelo arquivo oficial de releases; a imagem do servidor fixa Dart 3.13.7 e usa Debian Trixie também na camada runtime para manter compatibilidade de glibc. O Emulator CLI é fixado em 15.36.0 e usa Node 22 e JDK 21, exigido pelo Firebase CLI 15.36.0.
+
+`GET /health` na API retorna somente `{ "status": "ok" }`, sem autenticação, e é usado pelo health check do contêiner. O workflow de verificação roda em PR/push para `main`; o deploy de staging está em workflow separado, acionado manualmente, usa Workload Identity Federation e requer configuração/segredo pelo ambiente protegido `staging`. Nenhum workflow foi executado contra cloud.
 
 Para validar localmente, instale Firebase CLI e Java, execute `firebase emulators:start --only auth,firestore --project demo-amigosecreto`, configure `FIREBASE_AUTH_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`, `GOOGLE_CLOUD_PROJECT`, `FIREBASE_WEB_API_KEY`, `PUBLIC_BASE_URL` e `PORT=8090`, inicie `dart run bin/server.dart` em `server/`, e execute Flutter Web com as opções `--dart-define` documentadas no README. A porta 8090 é da API; Firestore Emulator usa 8080 e Flutter Web usa 8081. Use apenas o projeto `demo-*` e dados fictícios. No Windows do usuário, em 2026-11-12, Firebase CLI 15.36.0 e Temurin JDK 21.0.13 iniciaram Auth/Firestore Emulator; Node 26.13.1 instalou a CLI com aviso `EBADENGINE` para `superstatic`, mas os emuladores funcionaram. O teste `server/test/firestore_emulator_integration_test.dart` executa regras, lote de 200 documentos e concorrência contra o Emulator; os testes unitários do adaptador continuam usando HTTP falso.
 

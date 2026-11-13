@@ -41,6 +41,10 @@ class OnlineDrawApi {
         return;
       }
       final segments = request.uri.pathSegments;
+      if (request.method == 'GET' && request.uri.path == '/health') {
+        _send(request, HttpStatus.ok, {'status': 'ok'});
+        return;
+      }
       if (request.method == 'POST' && request.uri.path == '/v1/reveal') {
         final body = await _readJson(request);
         final result = await service.reveal(_string(body, 'token'));
