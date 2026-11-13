@@ -24,11 +24,11 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; seções 41–42 | Implementar fluxo online separado por áreas e conferir login/persistência no Chrome; depois validar CI |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; projeto Firebase, app Web e Firestore configurados pelo usuário; seções 41–44 | Confirmar Google Auth/domínios; configurar IAM/WIF e variáveis de staging; concluir validações Chrome e CI |
 
 ## 3. Ponto exato de retomada
 
-Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. Nenhum projeto cloud foi criado, nenhum deploy feito e nenhuma mensagem real enviada.
+Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. O projeto Firebase foi criado pelo usuário e o Firestore está configurado; nenhum deploy foi feito nem mensagem real enviada.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. Falta concluir o redesign online, conferir login/persistência no Chrome e executar o CI no GitHub. Não acionar o workflow de staging nem publicar sem autorização/configuração específica do projeto.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, registrou o app Web e criou Hosting e Firestore; a configuração pública foi recebida, sem incluir a chave no repositório. Próximo passo: confirmar Google como provedor habilitado e cadastrar/revisar os domínios `amigo-secreto-blacks.web.app` e, para teste local, `localhost` ou `127.0.0.1`. Depois será necessário configurar Cloud Run e IAM/WIF para staging. Login real, validação Chrome e CI seguem pendentes. Não acionar workflow de staging nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -581,3 +581,11 @@ O usuário pediu preparar Firebase e autenticação Google reais para publicar o
 **Pendências:** não é possível validar Google real nem staging sem projeto Firebase, app Web, Google provider, domínios Hosting autorizados e configuração de IAM/WIF. A inspeção manual no Chrome do aviso do Emulator e do popup continua pendente; a conta de teste deve ser fictícia. Workflow, CI e deploy não foram executados e nenhum recurso cloud foi criado.
 
 **Estado:** Fase 8 parcial. Próxima ação: o usuário cria o projeto Firebase, cria o site Hosting e o app Web, habilita Google Authentication, cadastra os domínios e fornece somente o ID do projeto/configuração pública do app Web para preparar e revisar staging. Produção exige revisão e autorização explícitas antes de qualquer deploy.
+
+## 44. Projeto Firebase criado pelo usuário — 2026-11-13
+
+O usuário informou que criou o projeto Firebase `amigo-secreto-blacks`, configurou o Hosting em `https://amigo-secreto-blacks.web.app/`, criou o banco Firestore e registrou um app Web. A configuração pública do app foi recebida nesta conversa. A chave Web não foi copiada para arquivos do repositório.
+
+**Estado confirmado pelo usuário:** projeto Firebase, app Web e banco Firestore criados; domínio padrão Hosting informado. **Ainda precisa confirmar:** provedor Google habilitado, domínios autorizados incluindo o Hosting e o host local usado para teste. Não há Cloud Run, IAM/WIF, Environment de staging ou publicação configurados/validados nesta etapa. Nenhum comando de Firebase/Google Cloud foi executado pelo agente e nenhum deploy foi feito.
+
+**Próxima ação:** no Firebase Console, conferir **Authentication → Sign-in method → Google** habilitado e **Authentication → Settings → Authorized domains** contendo `amigo-secreto-blacks.web.app`. Para testar login real em `localhost`, adicionar `localhost`; se abrir pelo endereço IP, autorizar também `127.0.0.1`. Em seguida, continuar IAM/WIF e as variáveis do Environment `staging`, conforme `docs/DEPLOY.md`; publicar staging permanece condicionado a revisão e autorização específica.

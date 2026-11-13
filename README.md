@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O modo online foi validado localmente com Firebase Emulators. Nenhum projeto cloud real foi configurado nem publicado. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
+> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O projeto Firebase `amigo-secreto-blacks`, o app Web, o Hosting e o Firestore já foram criados pelo usuário. Login Google, API Cloud Run e publicação do app ainda não foram validados. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
 
 ## Descrição para o GitHub
 
@@ -10,7 +10,7 @@ Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participan
 
 ## Sobre o projeto
 
-O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil. O modo local não usa backend. O modo online foi validado localmente com Firebase Emulator, mas ainda não tem projeto real configurado nem foi publicado.
+O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil. O modo local não usa backend. O modo online foi validado localmente com Firebase Emulator; o projeto Firebase real foi criado, mas a integração e a publicação ainda estão em preparação.
 
 O projeto dá atenção especial à integridade do sorteio: restrições de grupos não são removidas silenciosamente, os resultados são persistidos antes de qualquer etapa de envio e ficam ocultos até a revelação individual.
 
@@ -173,7 +173,7 @@ O workflow `.github/workflows/verify.yml` repete build/testes em PR e push para 
 
 No formulário online, os grupos são configurados separadamente dos eventos locais: escolha o tipo, marque os participantes e indique se a restrição está ativa. Após um sorteio, “Refazer sorteio e invalidar links atuais” pede confirmação e gera uma nova revisão; os links antigos deixam de funcionar. O organizador precisa entrar para gerenciar o evento, mas participantes abrem seus links sem login.
 
-Os dados e IDs acima são fictícios. O build Docker local sempre usa emuladores. Para autenticação Google real, configure um projeto Firebase e o domínio publicado conforme [`docs/DEPLOY.md`](docs/DEPLOY.md), depois forneça os valores do app Web ao workflow protegido de staging. Nunca use dados reais nos emuladores nem commite tokens ou chaves privadas. O projeto de produção ainda não foi criado e nenhum deploy foi feito.
+Os dados e IDs acima são fictícios. O build Docker local sempre usa emuladores. Para autenticação Google real e publicação em staging, siga [`docs/DEPLOY.md`](docs/DEPLOY.md). Nunca use dados reais nos emuladores nem commite tokens ou chaves privadas. O projeto Firebase `amigo-secreto-blacks` já existe; o app ainda não foi publicado e nenhum deploy foi feito.
 
 ## Desenvolvimento assistido por IA
 
