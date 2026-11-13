@@ -1,6 +1,6 @@
 # Preparar Firebase e publicação Web
 
-Este guia cobre a configuração do login Google real, Firebase Hosting, Firestore e API Cloud Run antes da publicação. O usuário criou o projeto `amigo-secreto-blacks`, registrou o app Web, criou o site Hosting e o banco Firestore. A configuração pública do app Web foi recebida; a ativação/validação do Google Authentication, a lista de domínios, o Cloud Run e qualquer deploy seguem pendentes.
+Este guia cobre a configuração do login Google real, Firebase Hosting, Firestore e API Cloud Run antes da publicação. O usuário criou o projeto `amigo-secreto-blacks`, registrou o app Web, criou o site Hosting e o banco Firestore. O provedor Google está habilitado e as capturas confirmam os domínios `localhost`, `amigo-secreto-blacks.firebaseapp.com` e `amigo-secreto-blacks.web.app`. O login real ainda não foi testado; Cloud Run e qualquer deploy seguem pendentes.
 
 ## 1. Gerar e revisar o artefato
 
@@ -69,4 +69,4 @@ O workflow executa smoke checks HTTP para `/health` da API e a raiz do Hosting a
 4. Confirme saúde em `/health`, HTTPS, rotas Flutter após recarga, logs sem dados pessoais/tokens e procedimento de reversão.
 5. Só então configure o ambiente de produção separado e solicite autorização explícita antes de executar qualquer publicação pública.
 
-O workflow de staging é apenas preparação versionada e ainda não foi executado. O projeto Firebase e o Firestore existem, mas billing, configuração do Google Authentication/domínios, recursos Cloud Run, IAM/WIF e login real continuam pendentes; produção e abertura pública permanecem bloqueadas até essa configuração e autorização específica.
+O workflow de staging é apenas preparação versionada e ainda não foi executado. O projeto Firebase e o Firestore existem; Google Authentication e os domínios principais estão configurados. Billing, recursos Cloud Run, IAM/WIF e validação do login real continuam pendentes; produção e abertura pública permanecem bloqueadas até essa configuração e autorização específica.

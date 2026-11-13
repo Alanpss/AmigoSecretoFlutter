@@ -806,7 +806,7 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 
 **Verificação e portão:** revisão local e CI com Docker e emuladores primeiro; login real e staging só depois de criar/configurar o projeto e seus domínios. Produção, custos e abertura pública exigem autorização explícita separada.
 
-**Estado da implementação (2026-11-13):** Compose validado e stack executado localmente; os perfis de teste Flutter e API passaram antes desta extensão. O fluxo por quatro áreas e o tema/lista online foram implementados, `flutter analyze` e build Web release em Docker passaram, e os serviços responderam. O usuário criou o projeto Firebase `amigo-secreto-blacks`, o app Web, o site Hosting e o banco Firestore; a configuração pública do app foi recebida. O fluxo visual/interativo no Chrome e a execução do CI no GitHub ainda não foram validados. Google Authentication/domínios, Cloud Run/IAM/WIF e workflow de staging continuam pendentes; nenhum deploy foi feito. A fase permanece parcial.
+**Estado da implementação (2026-11-13):** Compose validado e stack executado localmente; os perfis de teste Flutter e API passaram antes desta extensão. O fluxo por quatro áreas e o tema/lista online foram implementados, `flutter analyze` e build Web release em Docker passaram, e os serviços responderam. O usuário criou o projeto Firebase `amigo-secreto-blacks`, o app Web, o site Hosting e o banco Firestore; Google está ativado e as capturas confirmam os domínios principais autorizados. O login real, o fluxo visual/interativo no Chrome e a execução do CI no GitHub ainda não foram validados. Cloud Run/IAM/WIF e workflow de staging continuam pendentes; nenhum deploy foi feito. A fase permanece parcial.
 
 ---
 
