@@ -141,7 +141,7 @@ No modo Emulator, o servidor usa o token local especial `owner` para simular a i
 Em outro terminal, a partir da raiz do repositório, execute o Flutter Web com os valores de Firebase fornecidos pelo projeto de desenvolvimento ou pelo Auth Emulator:
 
 ```powershell
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_AUTH_DOMAIN=demo-amigosecreto.firebaseapp.com --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
 Para criar um sorteio, mantenha **três terminais** abertos: Firebase Emulators, API Dart na porta 8090 e Flutter Web na porta 8081. Se os emuladores estiverem ligados mas a API não, o login e a edição do rascunho podem funcionar, porém a criação do sorteio falhará. Use `127.0.0.1` na URL da API para manter o mesmo endereço IPv4 configurado no ambiente local.
@@ -158,7 +158,7 @@ docker compose up --build --detach
 docker compose ps
 ```
 
-Abra o app em `http://127.0.0.1:8081` e o Emulator UI em `http://127.0.0.1:4000`. A API fica em `http://127.0.0.1:8090`; Auth e Firestore Emulators usam `9099` e `8080`. O stack usa apenas o projeto `demo-amigosecreto` e valores fictícios. Portas são vinculadas ao loopback local. Rascunhos e dados do Emulator persistem em volumes Docker.
+Abra o app em `http://127.0.0.1:8081` e o Emulator UI em `http://127.0.0.1:4000`. A API fica em `http://127.0.0.1:8090`; Auth e Firestore Emulators usam `9099` e `8080`. O stack usa apenas o projeto `demo-amigosecreto` e valores fictícios. No login, a janela Google é simulada: selecione **Add new account** e use uma conta fictícia; não informe a senha de uma conta Google real. Portas são vinculadas ao loopback local. Rascunhos e dados do Emulator persistem em volumes Docker.
 
 Execute as verificações nos contêineres:
 
@@ -173,7 +173,7 @@ O workflow `.github/workflows/verify.yml` repete build/testes em PR e push para 
 
 No formulário online, os grupos são configurados separadamente dos eventos locais: escolha o tipo, marque os participantes e indique se a restrição está ativa. Após um sorteio, “Refazer sorteio e invalidar links atuais” pede confirmação e gera uma nova revisão; os links antigos deixam de funcionar. O organizador precisa entrar para gerenciar o evento, mas participantes abrem seus links sem login.
 
-Os dados e IDs acima são fictícios. Para autenticação Google real, registre o domínio de teste em Firebase Authentication e substitua as opções pelos valores do app Web. Nunca use dados reais nos emuladores nem commite chaves, tokens ou arquivos de credenciais. O projeto Firebase, configuração definitiva, custos e deploy ficam fora desta etapa. Consulte [`docs/AMBIENTE.md`](docs/AMBIENTE.md) e [`docs/DEPLOY.md`](docs/DEPLOY.md).
+Os dados e IDs acima são fictícios. O build Docker local sempre usa emuladores. Para autenticação Google real, configure um projeto Firebase e o domínio publicado conforme [`docs/DEPLOY.md`](docs/DEPLOY.md), depois forneça os valores do app Web ao workflow protegido de staging. Nunca use dados reais nos emuladores nem commite tokens ou chaves privadas. O projeto de produção ainda não foi criado e nenhum deploy foi feito.
 
 ## Desenvolvimento assistido por IA
 

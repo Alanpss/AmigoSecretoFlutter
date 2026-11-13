@@ -1,7 +1,7 @@
 # Progresso
 
 **Última atualização:** 2026-11-13
-**Fase atual:** Fase 8 — Ambiente Docker e automação de publicação **autorizada, em andamento**
+**Fase atual:** Fase 8 — Ambiente Docker, automação e experiência online **autorizada, em andamento**
 **Fase anterior:** Fase 7 — Cópia e gestão de eventos online **aceita pelo usuário em 2026-11-12; commit `b5b9b68`**
 **Implementação:** Fases 1–7 aceitas; preparação Docker/CI da Fase 8 em andamento
 **Instalações realizadas:** Flutter 3.47.9 stable no escopo do usuário
@@ -24,7 +24,7 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker e automação de publicação | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; seção 41 | Validar login/persistência pela interface no Chrome e execução do CI no GitHub |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; seções 41–42 | Implementar fluxo online separado por áreas e conferir login/persistência no Chrome; depois validar CI |
 
 ## 3. Ponto exato de retomada
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. Compose, builds, serviços e testes conteinerizados passaram localmente; faltam fluxo Web via Chrome e execução do CI no GitHub. Não acionar o workflow de staging nem publicar sem autorização/configuração específica do projeto.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. Falta concluir o redesign online, conferir login/persistência no Chrome e executar o CI no GitHub. Não acionar o workflow de staging nem publicar sem autorização/configuração específica do projeto.
 
 ## 15. Histórico
 
@@ -556,4 +556,28 @@ Os primeiros builds encontraram três problemas reais e foram corrigidos antes d
 
 **Pendências:** a inspeção visual/interativa do fluxo Web no Chrome não foi possível porque a ferramenta de automação encerrou a ação ao não conseguir determinar com confiança a URL atual do navegador. Web HTTP 200 e testes de API não substituem validar login no Auth Emulator, gravação pelo fluxo Web e persistência após recarga no Chrome. O workflow CI ainda não foi executado no GitHub e o deploy de staging não foi acionado. Não houve publicação nem envio WhatsApp.
 
-**Estado:** Fase 8 permanece parcial. Próxima ação: executar no Chrome o fluxo descrito na seção 19 de `docs/TESTES.md` (login fictício, criação de sorteio e recarga para confirmar persistência) e validar o workflow de CI quando houver um PR/push autorizado. Staging exige configuração prévia de Environment/WIF e autorização específica. Docker Compose mantém o stack local ativo nas portas 8081, 8090, 9099, 8080 e 4000; `docker compose down` encerra os serviços sem apagar os volumes.
+**Estado à época:** Fase 8 permanecia parcial. O usuário informou depois que o Docker estava instalado e os resultados das validações estão na seção 41. Staging exige configuração prévia de Environment/WIF e autorização específica. Docker Compose mantém o stack local ativo nas portas 8081, 8090, 9099, 8080 e 4000; `docker compose down` encerra os serviços sem apagar os volumes.
+
+## 42. Melhoria da experiência online — 2026-11-13
+
+O usuário pediu que criar e gerenciar eventos online fique organizado como o fluxo local, com abas/áreas separadas, e solicitou uma atualização visual das telas e da experiência. A autorização foi registrada como extensão explícita da Fase 8, sem concluir ou substituir as validações ainda pendentes. Antes do redesign, a infraestrutura Docker validada foi separada no commit `74d1938` (`feat: add containerized development stack`); esse commit não marca a Fase 8 como concluída e não foi enviado ao GitHub.
+
+**Implementado:** `OnlineEventWorkspace` separa o formulário em quatro áreas navegáveis (Evento, Participantes, Grupos e Revisão e links), com ações de continuidade entre etapas. As áreas de participantes e grupos têm cartões próprios; grupos iniciam recolhidos para diminuir a página; revisão resume participantes ativos e grupos restritos e concentra sorteio/refação e gestão de links. Login, sair, cópia para modo local, confirmação de sorteio, revogação, salvamento e links mantêm os handlers atuais. A lista online ganhou cabeçalho/ação principal, métricas e cartões com estado. O tema global agora usa superfícies mais suaves, campos, botões e cartões arredondados com alvos de toque mínimos preservados.
+
+**Validações executadas:** `dart format lib/app/theme.dart lib/features/online_draw/presentation/online_draw_page.dart lib/features/online_draw/presentation/online_draw_events_page.dart lib/features/online_draw/presentation/online_event_workspace.dart` terminou com 4 arquivos verificados e 0 alterações na formatação final; `flutter analyze` terminou sem issues (8,8 s na última execução); `docker compose up --build --detach web` recompilou o build Web release em 107,9 s e recriou somente o serviço Web; `docker compose ps` indicou os 3 serviços saudáveis. Web, Auth e Firestore responderam HTTP 200 e a API respondeu `{"status":"ok"}`. `git diff --check` passou sem erros, com avisos Git de normalização LF/CRLF. Nenhum teste automatizado foi executado nesta alteração.
+
+**Pendências:** inspeção visual e interação no Chrome com Auth/Firestore Emulators não concluídas. A ferramenta de automação encerrou a tentativa ao não conseguir determinar com confiança a URL atual do navegador; HTTP 200/build/análise não substituem esse fluxo. Execução do CI no GitHub e deploy de staging também continuam pendentes.
+
+**Estado:** Fase 8 parcial; redesign implementado e buildado localmente, mas ainda precisa da conferência do usuário no Chrome conforme seção de UX de `docs/TESTES.md`. O servidor Docker segue ativo em `http://127.0.0.1:8081`; os arquivos do redesign estão sem commit.
+
+## 43. Preparação do login Google real — 2026-11-13
+
+O usuário pediu preparar Firebase e autenticação Google reais para publicar o modo online em produção e autorizou commit. Isso estende a Fase 8; não autoriza criar recursos cloud, habilitar billing ou publicar. O usuário informou que ainda não criou um projeto Firebase.
+
+**Implementado:** `FirebaseConfiguration` agora exige os cinco valores do app Web, não inicializa Firebase com configuração ausente e bloqueia um projeto `demo-*` quando os emuladores estão desligados. `USE_FIREBASE_EMULATORS` e os argumentos genéricos do Docker passam a ter padrão seguro (desligado e sem IDs demo); Compose continua ligando o Emulator com valores fictícios. A tela de login explica a conta simulada no Emulator e apresenta instruções para domínios não autorizados, provedor Google desativado, popup bloqueado, rede e chave inválida. O workflow de staging rejeita configurações demo. README, ambiente, arquitetura, requisitos, plano, testes e guia de deploy agora registram a configuração real, domínios OAuth, Firestore, identidade mínima Cloud Run e o roteiro de validação.
+
+**Validações executadas:** `docker compose config --quiet` passou. `dart format --output=none --set-exit-if-changed .` verificou 119 arquivos, 0 alterados. `flutter analyze` passou sem issues após corrigir uma referência inicial ao formatador de erro e novamente após exigir `FIREBASE_AUTH_DOMAIN` e recusar valores demo em builds sem emuladores. `flutter build web --release` concluiu em 93,2 s sem opções Firebase; o build final da imagem local Compose compilou o app com configuração demo/emuladores em 84,7 s. `docker compose build web` seguido de `docker compose up --detach web` atualizou somente o contêiner Web final; os 3 serviços ficaram saudáveis. Web respondeu HTTP 200 e `/health` respondeu `{"status":"ok"}`. `git diff --check` não encontrou erros; Git reportou somente normalização LF/CRLF no Windows. Nenhum teste automatizado foi executado nesta alteração.
+
+**Pendências:** não é possível validar Google real nem staging sem projeto Firebase, app Web, Google provider, domínios Hosting autorizados e configuração de IAM/WIF. A inspeção manual no Chrome do aviso do Emulator e do popup continua pendente; a conta de teste deve ser fictícia. Workflow, CI e deploy não foram executados e nenhum recurso cloud foi criado.
+
+**Estado:** Fase 8 parcial. Próxima ação: o usuário cria o projeto Firebase, cria o site Hosting e o app Web, habilita Google Authentication, cadastra os domínios e fornece somente o ID do projeto/configuração pública do app Web para preparar e revisar staging. Produção exige revisão e autorização explícitas antes de qualquer deploy.

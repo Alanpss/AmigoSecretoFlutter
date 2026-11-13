@@ -55,6 +55,12 @@ jobs:
             echo "::error::The GCP and Firebase project IDs must match for staging."
             exit 1
           fi
+          if [[ "$FIREBASE_PROJECT_ID" == demo-* || "$FIREBASE_API_KEY" == demo-* || \
+                "$FIREBASE_APP_ID" == demo-* || "$FIREBASE_MESSAGING_SENDER_ID" == demo-* || \
+                "$FIREBASE_AUTH_DOMAIN" == demo-* ]]; then
+            echo "::error::Staging requires configuration from a real Firebase Web app, not demo values."
+            exit 1
+          fi
           if [[ "$PUBLIC_BASE_URL" != https://* ]]; then
             echo "::error::PUBLIC_BASE_URL must be an HTTPS staging origin."
             exit 1

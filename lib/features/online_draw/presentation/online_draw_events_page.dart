@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
+import '../data/firebase_configuration.dart';
 import '../data/online_draw_client.dart';
 import '../data/online_draw_draft_repository.dart';
 
@@ -65,6 +66,17 @@ class _OnlineDrawEventsPageState extends ConsumerState<OnlineDrawEventsPage> {
     );
     if (confirmed != true || !mounted) return;
 
+    if (hasRemoteRecord && !FirebaseConfiguration.canInitialize) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            FirebaseConfiguration.configurationError ??
+                'Configure o Firebase para gerenciar este evento online.',
+          ),
+        ),
+      );
+      return;
+    }
     if (hasRemoteRecord && FirebaseAuth.instance.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -141,31 +153,118 @@ class _OnlineDrawEventsPageState extends ConsumerState<OnlineDrawEventsPage> {
           );
         }
         final drafts = snapshot.data!;
+        final participantCount = drafts.fold<int>(
+          0,
+          (total, draft) =>
+              total + ((draft['participants'] as List?)?.length ?? 0),
+        );
         return Scaffold(
-          appBar: AppBar(title: const Text('Eventos online')),
+          appBar: AppBar(title: const Text('Meus eventos online')),
           body: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
+              constraints: const BoxConstraints(maxWidth: 1040),
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
                 children: [
-                  const Text(
-                    'Os eventos e links são guardados neste navegador. Use a mesma origem e o mesmo perfil do Chrome para retomá-los.',
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.tertiary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Organize sem revelar os pares',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Crie eventos online, configure participantes e compartilhe links individuais.',
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.92),
+                              ),
+                        ),
+                        const SizedBox(height: 18),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary,
+                          ),
+                          onPressed: () => context.push('/online/new'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Criar evento online'),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: () => context.push('/online/new'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Criar evento online'),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _OnlineListMetric(
+                        icon: Icons.event_available_outlined,
+                        label: 'Eventos neste navegador',
+                        value: '${drafts.length}',
+                      ),
+                      _OnlineListMetric(
+                        icon: Icons.people_outline,
+                        label: 'Participantes cadastrados',
+                        value: '$participantCount',
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Seus eventos',
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
                   if (drafts.isEmpty)
-                    const Card(
-                      child: ListTile(
-                        leading: Icon(Icons.cloud_outlined),
-                        title: Text('Nenhum evento online neste navegador'),
-                        subtitle: Text(
-                          'Crie um evento ou copie um evento local para começar.',
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.event_note_outlined,
+                              size: 48,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Seu primeiro sorteio começa aqui',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Crie um evento ou copie os dados de um evento local. Os resultados locais não são copiados.',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -175,6 +274,7 @@ class _OnlineDrawEventsPageState extends ConsumerState<OnlineDrawEventsPage> {
                       isDeleting: _deletingEventId == draft['eventId'],
                       onDelete: () => _deleteEvent(draft),
                     ),
+                  const _OnlineLocalStorageNotice(),
                 ],
               ),
             ),
@@ -183,6 +283,73 @@ class _OnlineDrawEventsPageState extends ConsumerState<OnlineDrawEventsPage> {
       },
     );
   }
+}
+
+class _OnlineListMetric extends StatelessWidget {
+  const _OnlineListMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: MediaQuery.sizeOf(context).width < 600
+        ? MediaQuery.sizeOf(context).width - 40
+        : 230,
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(value, style: Theme.of(context).textTheme.titleLarge),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _OnlineLocalStorageNotice extends StatelessWidget {
+  const _OnlineLocalStorageNotice();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Rascunhos e links são guardados neste navegador. Use o mesmo perfil e endereço para retomá-los.',
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _OnlineEventCard extends StatelessWidget {
@@ -211,31 +378,84 @@ class _OnlineEventCard extends StatelessWidget {
     final hasDraw = links.isNotEmpty;
     final name = (draft['eventName'] as String? ?? '').trim();
 
+    final colorScheme = Theme.of(context).colorScheme;
     return Card(
-      child: ListTile(
-        leading: Icon(hasDraw ? Icons.link : Icons.cloud_outlined),
-        title: Text(name.isEmpty ? 'Evento sem nome' : name),
-        subtitle: Text(
-          '${hasDraw ? 'Sorteado' : 'Rascunho'} · $activeCount ativos de '
-          '${participants.length} participantes${hasDraw ? ' · ${links.length} links' : ''}',
-        ),
-        trailing: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            IconButton(
-              tooltip: 'Excluir evento online',
-              onPressed: isDeleting ? null : onDelete,
-              icon: isDeleting
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.delete_outline),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: isDeleting ? null : () => context.push('/online/$eventId'),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: colorScheme.primaryContainer,
+                    child: Icon(
+                      hasDraw ? Icons.link : Icons.event_note_outlined,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.isEmpty ? 'Evento sem nome' : name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$activeCount participantes ativos de ${participants.length}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Excluir evento online',
+                    onPressed: isDeleting ? null : onDelete,
+                    icon: isDeleting
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_outline),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      hasDraw ? Icons.check_circle_outline : Icons.edit_note,
+                      size: 18,
+                    ),
+                    label: Text(hasDraw ? 'Sorteado' : 'Rascunho'),
+                  ),
+                  if (hasDraw)
+                    Chip(
+                      avatar: const Icon(Icons.link_outlined, size: 18),
+                      label: Text('${links.length} links'),
+                    ),
+                  Icon(
+                    Icons.arrow_forward,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ import '../data/firebase_configuration.dart';
 import '../data/online_draw_client.dart';
 import '../data/online_draw_draft_repository.dart';
 import '../data/online_draft_local_copy_repository.dart';
+import 'online_event_workspace.dart';
 
 class OnlineDrawPage extends ConsumerStatefulWidget {
   const OnlineDrawPage({super.key, this.draftId, this.sourceLocalEventId});
@@ -50,10 +51,13 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
   @override
   void initState() {
     super.initState();
-    _user = FirebaseAuth.instance.currentUser;
-    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (mounted) setState(() => _user = user);
-    });
+    if (FirebaseConfiguration.canInitialize) {
+      final auth = FirebaseAuth.instance;
+      _user = auth.currentUser;
+      _authSubscription = auth.authStateChanges().listen((user) {
+        if (mounted) setState(() => _user = user);
+      });
+    }
     unawaited(_restoreDraft());
   }
 
@@ -422,17 +426,44 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
     super.dispose();
   }
 
+  String _googleSignInErrorMessage(FirebaseAuthException error) {
+    final code = error.code.replaceFirst('auth/', '');
+    return switch (code) {
+      'unauthorized-domain' => 'Este endereço não está autorizado no Firebase Authentication. Cadastre o domínio publicado em Authentication > Settings > Authorized domains.',
+      'operation-not-allowed' => 'O login Google está desativado neste projeto Firebase. Habilite Google em Authentication > Sign-in method.',
+      'popup-blocked' => 'O navegador bloqueou a janela do Google. Permita pop-ups para este endereço e tente novamente.',
+      'popup-closed-by-user' => 'A janela de login foi fechada antes de concluir. Abra o login novamente para continuar.',
+      'cancelled-popup-request' => 'Já existe uma janela de login aberta. Conclua essa janela ou feche-a antes de tentar novamente.',
+      'network-request-failed' => 'Não foi possível conectar ao Firebase ou ao Google. Confira a conexão e tente novamente.',
+      'invalid-api-key' => 'A chave do app Web Firebase não foi aceita. Confira as opções FIREBASE_* usadas neste build.',
+      'web-storage-unsupported' => 'O navegador não disponibilizou armazenamento para manter a sessão. Habilite armazenamento local e tente novamente.',
+      _ =>
+        'Não foi possível concluir o login Google (código: $code). Confira o provedor e as opções do app Web Firebase.',
+    };
+  }
+
   Future<void> _signIn() async {
+    final configurationError = FirebaseConfiguration.configurationError;
+    if (configurationError != null) {
+      setState(() => _error = configurationError);
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await FirebaseAuth.instance.signInWithPopup(GoogleAuthProvider());
+    } on FirebaseAuthException catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = _googleSignInErrorMessage(error);
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Não foi possível entrar com Google. Tente novamente.';
+          _error = 'Não foi possível concluir o login Google. Confira a conexão e tente novamente.';
         });
       }
     } finally {
@@ -777,362 +808,533 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
       return const _OnlineSetupNotice();
     }
     final user = _user;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sorteio online'),
-        actions: [
-          IconButton(
-            tooltip: 'Voltar à lista de eventos online',
-            onPressed: () => context.go('/online'),
-            icon: const Icon(Icons.list_alt),
-          ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
-                'Evento online',
-                style: Theme.of(context).textTheme.headlineSmall,
+    return DefaultTabController(
+      length: 4,
+      child: Builder(
+        builder: (tabContext) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Evento online'),
+            actions: [
+              IconButton(
+                tooltip: 'Voltar à lista de eventos online',
+                onPressed: () => context.go('/online'),
+                icon: const Icon(Icons.list_alt),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'O sorteio fica no servidor. Esta tela recebe links de entrega, sem mostrar os pares.',
-              ),
-              const SizedBox(height: 16),
-              if (user == null)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'O login é necessário para organizar o evento. Os participantes abrem seus links individuais sem entrar na conta.',
-                    ),
-                    const SizedBox(height: 8),
-                    FilledButton.icon(
-                      onPressed: _busy ? null : _signIn,
-                      icon: const Icon(Icons.login),
-                      label: const Text('Entrar com Google'),
+              if (user != null)
+                PopupMenuButton<String>(
+                  tooltip: 'Mais opções',
+                  onSelected: (action) {
+                    if (action == 'copy') {
+                      _copyOnlineDraftToLocal();
+                    } else if (action == 'sign-out') {
+                      _signOut();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    if (_draftReady)
+                      const PopupMenuItem(
+                        value: 'copy',
+                        child: ListTile(
+                          leading: Icon(Icons.copy_all_outlined),
+                          title: Text('Copiar como evento local'),
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'sign-out',
+                      child: ListTile(
+                        leading: Icon(Icons.logout),
+                        title: Text('Sair da conta'),
+                      ),
                     ),
                   ],
-                )
-              else ...[
-                Text(
-                  'Conectado como ${user.displayName ?? user.email ?? 'organizador'}',
                 ),
-                const SizedBox(height: 4),
-                if (_draftReady)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: _busy ? null : _copyOnlineDraftToLocal,
-                      icon: const Icon(Icons.download_outlined),
-                      label: const Text('Copiar rascunho para evento local'),
-                    ),
-                  ),
-                Text(
-                  !_draftReady
-                      ? 'Carregando rascunho…'
-                      : _draftSaved
-                      ? 'Rascunho salvo neste dispositivo.'
-                      : 'Salvando rascunho…',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                if (_links.isNotEmpty && _drawNeedsRefresh)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.info_outline),
-                        title: const Text(
-                          'Os dados mudaram; os links atuais ainda mostram o sorteio anterior até você refazer o sorteio.',
-                        ),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _eventName,
-                  enabled: _draftReady,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome do evento',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                for (var index = 0; index < _rows.length; index++)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _rows[index].name,
-                            enabled: _draftReady,
-                            decoration: InputDecoration(
-                              labelText: 'Participante ${index + 1}',
-                            ),
-                          ),
-                          TextField(
-                            controller: _rows[index].recipient,
-                            enabled: _draftReady,
-                            decoration: const InputDecoration(
-                              labelText: 'Destinatário direto',
-                            ),
-                          ),
-                          TextField(
-                            controller: _rows[index].phone,
-                            enabled: _draftReady,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'WhatsApp do destinatário (opcional, formato +5511999999999)',
-                            ),
-                          ),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Participa do sorteio'),
-                            value: _rows[index].isActive,
-                            onChanged: !_draftReady
-                                ? null
-                                : (value) {
-                                    setState(
-                                      () => _rows[index].isActive = value,
-                                    );
-                                    _scheduleDraftSave();
-                                  },
-                          ),
-                          if (_rows.length > 2)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: !_draftReady
-                                    ? null
-                                    : () => _removeParticipant(_rows[index]),
-                                icon: const Icon(Icons.delete_outline),
-                                label: const Text('Remover participante'),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: !_draftReady || _rows.length >= 200
-                        ? null
-                        : () {
-                            final row = _ParticipantInput();
-                            _addRowListeners(row);
-                            setState(() {
-                              _rows.add(row);
-                            });
-                            _scheduleDraftSave();
-                          },
-                    icon: const Icon(Icons.person_add_alt_1),
-                    label: const Text('Adicionar participante'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Grupos e restrições',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Pessoas de um grupo com restrição ativa não podem tirar umas às outras. Os grupos online são independentes dos grupos dos eventos locais.',
-                ),
-                for (final group in _groups)
-                  Card(
-                    child: ExpansionTile(
-                      key: ValueKey(group.id),
-                      initiallyExpanded: true,
-                      title: Text(
-                        group.name.text.trim().isEmpty
-                            ? 'Novo grupo'
-                            : group.name.text.trim(),
-                      ),
-                      subtitle: Text(
-                        '${group.participantIds.length} participantes · ${group.restrictionEnabled ? 'restrição ativa' : 'sem restrição'}',
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: TextField(
-                            controller: group.name,
-                            enabled: _draftReady,
-                            decoration: const InputDecoration(
-                              labelText: 'Nome do grupo',
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: DropdownButtonFormField<GroupType>(
-                            initialValue: group.type,
-                            decoration: const InputDecoration(
-                              labelText: 'Tipo de grupo',
-                            ),
-                            items: [
-                              for (final type in GroupType.values)
-                                DropdownMenuItem(
-                                  value: type,
-                                  child: Text(type.label),
-                                ),
-                            ],
-                            onChanged: !_draftReady
-                                ? null
-                                : (value) {
-                                    if (value == null) return;
-                                    setState(() => group.type = value);
-                                    _scheduleDraftSave();
-                                  },
-                          ),
-                        ),
-                        SwitchListTile(
-                          title: const Text('Impedir sorteios dentro do grupo'),
-                          subtitle: const Text(
-                            'Quando desligada, os integrantes ainda podem tirar uns aos outros.',
-                          ),
-                          value: group.restrictionEnabled,
-                          onChanged: !_draftReady
-                              ? null
-                              : (value) {
-                                  setState(
-                                    () => group.restrictionEnabled = value,
-                                  );
-                                  _scheduleDraftSave();
-                                },
-                        ),
-                        const ListTile(
-                          dense: true,
-                          title: Text('Participantes do grupo'),
-                          subtitle: Text('Selecione pelo menos duas pessoas.'),
-                        ),
-                        for (var index = 0; index < _rows.length; index++)
-                          CheckboxListTile(
-                            value: group.participantIds.contains(
-                              _rows[index].id,
-                            ),
-                            title: Text(
-                              _rows[index].name.text.trim().isEmpty
-                                  ? 'Participante ${index + 1}'
-                                  : _rows[index].name.text.trim(),
-                            ),
-                            onChanged: !_draftReady
-                                ? null
-                                : (selected) {
-                                    setState(() {
-                                      if (selected == true) {
-                                        group.participantIds.add(
-                                          _rows[index].id,
-                                        );
-                                      } else {
-                                        group.participantIds.remove(
-                                          _rows[index].id,
-                                        );
-                                      }
-                                    });
-                                    _scheduleDraftSave();
-                                  },
-                          ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: !_draftReady
-                                ? null
-                                : () => _removeGroup(group),
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Remover grupo'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: !_draftReady ? null : _addGroup,
-                    icon: const Icon(Icons.groups_outlined),
-                    label: const Text('Adicionar grupo'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: !_draftReady || _busy
-                      ? null
-                      : _confirmAndCreateDraw,
-                  icon: const Icon(Icons.shuffle),
-                  label: Text(
-                    _links.isEmpty
-                        ? 'Sortear e gerar links'
-                        : 'Refazer sorteio e invalidar links atuais',
-                  ),
-                ),
-                TextButton(
-                  onPressed: _busy ? null : _signOut,
-                  child: const Text('Sair'),
-                ),
-              ],
-              if (_busy)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
+            ],
+          ),
+          body: Column(
+            children: [
+              _OnlineWorkspaceHeader(
+                eventName: _eventName.text.trim(),
+                user: user,
+                draftReady: _draftReady,
+                draftSaved: _draftSaved,
+              ),
+              if (_busy) const LinearProgressIndicator(minHeight: 3),
               if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
+                _OnlineErrorBanner(
+                  message: _error!,
+                  onDismiss: () {
+                    setState(() => _error = null);
+                  },
                 ),
-              if (_links.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Links individuais',
-                  style: Theme.of(context).textTheme.titleLarge,
+              if (_links.isNotEmpty && _drawNeedsRefresh)
+                _OnlineNotice(
+                  icon: Icons.info_outline,
+                  message: 'Os dados mudaram. Os links atuais ainda mostram o sorteio anterior; revise e refaça o sorteio para atualizá-los.',
+                  isWarning: true,
                 ),
-                const Text(
-                  'Confira a pessoa e o destinatário antes de encaminhar. O WhatsApp abrirá com somente o link; confirme o envio manualmente.',
-                ),
-                for (final link in _links)
-                  Card(
-                    child: ListTile(
-                      title: Text(link.participantName),
-                      subtitle: SelectableText(
-                        _revokedLinks.contains(link.url)
-                            ? 'Link revogado'
-                            : 'Enviar para ${link.recipientName}\n${link.url}',
+              Expanded(
+                child: user == null
+                    ? _buildSignInPanel(context)
+                    : OnlineEventWorkspace(
+                        eventTab: _buildEventTab(context),
+                        participantsTab: _buildParticipantsTab(context),
+                        groupsTab: _buildGroupsTab(context),
+                        reviewTab: _buildReviewTab(context),
                       ),
-                      trailing: _revokedLinks.contains(link.url)
-                          ? const Icon(Icons.link_off)
-                          : Wrap(
-                              children: [
-                                IconButton(
-                                  tooltip: 'Abrir WhatsApp',
-                                  icon: const Icon(Icons.chat),
-                                  onPressed: () => _openWhatsApp(link),
-                                ),
-                                IconButton(
-                                  tooltip: 'Revogar link',
-                                  icon: const Icon(Icons.link_off),
-                                  onPressed: () => _revokeLink(link),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-              ],
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildSignInPanel(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(20),
+    children: [
+      Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer,
+                    child: Icon(
+                      Icons.lock_person_outlined,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Entre para organizar seu evento',
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sua conta protege a área de organização. Participantes não precisam entrar: cada um abre somente o próprio link.',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  if (FirebaseConfiguration.configurationError
+                      case final error?) ...[
+                    _OnlineNotice(
+                      icon: Icons.settings_outlined,
+                      message: error,
+                      isWarning: true,
+                    ),
+                    const SizedBox(height: 16),
+                  ] else if (FirebaseConfiguration.useEmulators) ...[
+                    const _OnlineNotice(
+                      icon: Icons.science_outlined,
+                      message: 'Modo de teste local: o login Google é simulado. Na janela aberta, use “Add new account” e crie uma conta fictícia; não informe a senha da sua conta Google real.',
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  FilledButton.icon(
+                    onPressed: _busy || !FirebaseConfiguration.canInitialize
+                        ? null
+                        : _signIn,
+                    icon: const Icon(Icons.login),
+                    label: const Text('Entrar com Google'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildEventTab(BuildContext context) => _stepList(
+    context,
+    step: 'ETAPA 1 DE 4',
+    title: 'Dados do evento',
+    subtitle: 'Dê um nome para encontrar e retomar este sorteio depois.',
+    children: [
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _eventName,
+                enabled: _draftReady,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Nome do evento',
+                  hintText: 'Ex.: Amigo secreto da família',
+                  prefixIcon: Icon(Icons.celebration_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const _OnlineNotice(
+                icon: Icons.visibility_off_outlined,
+                message: 'O resultado é calculado no servidor. Nesta área você verá os links individuais, sem os pares do sorteio.',
+              ),
+              const SizedBox(height: 8),
+              const _OnlineNotice(
+                icon: Icons.save_outlined,
+                message: 'O rascunho e os links ficam salvos neste navegador. Use o mesmo perfil e endereço para retomá-los.',
+              ),
+            ],
+          ),
+        ),
+      ),
+      _OnlineStepFooter(label: 'Continuar para participantes', nextIndex: 1),
+    ],
+  );
+
+  Widget _buildParticipantsTab(BuildContext context) {
+    final activeCount = _rows.where((row) => row.isActive).length;
+    return _stepList(
+      context,
+      step: 'ETAPA 2 DE 4',
+      title: 'Participantes e contatos',
+      subtitle:
+          'Cadastre quem participa e para quem cada link deve ser encaminhado.',
+      trailing: _CountBadge(
+        label: '$activeCount ativos',
+        icon: Icons.people_alt_outlined,
+      ),
+      children: [
+        _OnlineNotice(
+          icon: Icons.info_outline,
+          message: 'O destinatário é quem receberá o link. O resultado continua pertencendo ao participante.',
+        ),
+        for (var index = 0; index < _rows.length; index++)
+          _OnlineParticipantCard(
+            key: ValueKey(_rows[index].id),
+            row: _rows[index],
+            index: index,
+            enabled: _draftReady,
+            canRemove: _rows.length > 2,
+            onActiveChanged: (value) {
+              setState(() => _rows[index].isActive = value);
+              _scheduleDraftSave();
+            },
+            onRemove: () => _removeParticipant(_rows[index]),
+          ),
+        OutlinedButton.icon(
+          onPressed: !_draftReady || _rows.length >= 200
+              ? null
+              : () {
+                  final row = _ParticipantInput();
+                  _addRowListeners(row);
+                  setState(() => _rows.add(row));
+                  _scheduleDraftSave();
+                },
+          icon: const Icon(Icons.person_add_alt_1),
+          label: Text(
+            _rows.length >= 200
+                ? 'Limite de 200 participantes atingido'
+                : 'Adicionar participante',
+          ),
+        ),
+        _OnlineStepFooter(label: 'Continuar para grupos', nextIndex: 2),
+      ],
+    );
+  }
+
+  Widget _buildGroupsTab(BuildContext context) => _stepList(
+    context,
+    step: 'ETAPA 3 DE 4',
+    title: 'Grupos e restrições',
+    subtitle: 'Escolha quais pessoas não podem tirar umas às outras.',
+    children: [
+      const _OnlineNotice(
+        icon: Icons.groups_2_outlined,
+        message: 'A restrição vale para cada grupo em que estiver ativada. Ela não é herdada do responsável. Grupos online são independentes dos grupos locais.',
+      ),
+      if (_groups.isEmpty)
+        const _OnlineEmptyCard(
+          icon: Icons.group_add_outlined,
+          title: 'Nenhum grupo criado',
+          message: 'Se houver famílias ou casais que não devem se sortear entre si, crie os grupos aqui.',
+        ),
+      for (final group in _groups)
+        Card(
+          key: ValueKey('group-card-${group.id}'),
+          clipBehavior: Clip.antiAlias,
+          child: ExpansionTile(
+            key: ValueKey(group.id),
+            initiallyExpanded: false,
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+              child: Icon(
+                group.type == GroupType.family
+                    ? Icons.home_outlined
+                    : group.type == GroupType.couple
+                    ? Icons.favorite_outline
+                    : Icons.groups_outlined,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+            title: Text(
+              group.name.text.trim().isEmpty
+                  ? 'Novo grupo'
+                  : group.name.text.trim(),
+            ),
+            subtitle: Text(
+              '${group.type.label} · ${group.participantIds.length} pessoas · '
+              '${group.restrictionEnabled ? 'restrição ativa' : 'sem restrição'}',
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            children: [
+              TextField(
+                controller: group.name,
+                enabled: _draftReady,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(labelText: 'Nome do grupo'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<GroupType>(
+                initialValue: group.type,
+                decoration: const InputDecoration(labelText: 'Tipo de grupo'),
+                items: [
+                  for (final type in GroupType.values)
+                    DropdownMenuItem(value: type, child: Text(type.label)),
+                ],
+                onChanged: !_draftReady
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() => group.type = value);
+                        _scheduleDraftSave();
+                      },
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Impedir sorteios dentro do grupo'),
+                subtitle: const Text(
+                  'Os integrantes ainda podem tirar uns aos outros se desligada.',
+                ),
+                value: group.restrictionEnabled,
+                onChanged: !_draftReady
+                    ? null
+                    : (value) {
+                        setState(() => group.restrictionEnabled = value);
+                        _scheduleDraftSave();
+                      },
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Participantes do grupo',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              for (var index = 0; index < _rows.length; index++)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: group.participantIds.contains(_rows[index].id),
+                  title: Text(
+                    _rows[index].name.text.trim().isEmpty
+                        ? 'Participante ${index + 1}'
+                        : _rows[index].name.text.trim(),
+                  ),
+                  onChanged: !_draftReady
+                      ? null
+                      : (selected) {
+                          setState(() {
+                            if (selected == true) {
+                              group.participantIds.add(_rows[index].id);
+                            } else {
+                              group.participantIds.remove(_rows[index].id);
+                            }
+                          });
+                          _scheduleDraftSave();
+                        },
+                ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: !_draftReady ? null : () => _removeGroup(group),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Remover grupo'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      OutlinedButton.icon(
+        onPressed: !_draftReady ? null : _addGroup,
+        icon: const Icon(Icons.add),
+        label: const Text('Adicionar grupo'),
+      ),
+      _OnlineStepFooter(label: 'Continuar para revisão', nextIndex: 3),
+    ],
+  );
+
+  Widget _buildReviewTab(BuildContext context) {
+    final activeCount = _rows.where((row) => row.isActive).length;
+    final restrictedGroupCount = _groups
+        .where((group) => group.restrictionEnabled)
+        .length;
+    return _stepList(
+      context,
+      step: 'ETAPA 4 DE 4',
+      title: _links.isEmpty ? 'Revisar e sortear' : 'Revisão e links',
+      subtitle: _links.isEmpty
+          ? 'Confira os dados antes de confirmar o sorteio.'
+          : 'Envie cada link para o destinatário correto. Os pares continuam ocultos.',
+      children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _SummaryTile(
+              icon: Icons.people_alt_outlined,
+              label: 'Participantes ativos',
+              value: '$activeCount',
+            ),
+            _SummaryTile(
+              icon: Icons.groups_outlined,
+              label: 'Grupos restritos',
+              value: '$restrictedGroupCount',
+            ),
+            _SummaryTile(
+              icon: _links.isEmpty
+                  ? Icons.pending_actions_outlined
+                  : Icons.link_outlined,
+              label: 'Estado',
+              value: _links.isEmpty ? 'Rascunho' : '${_links.length} links',
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const _OnlineNotice(
+          icon: Icons.shield_outlined,
+          message: 'O servidor guarda o sorteio, mas não devolve os pares para esta tela. Quem receber um link poderá abrir aquele resultado.',
+        ),
+        if (_links.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pronto para sortear?',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'O sorteio será salvo antes de gerar os links. Nenhuma mensagem é enviada automaticamente.',
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: !_draftReady || _busy
+                        ? null
+                        : _confirmAndCreateDraw,
+                    icon: const Icon(Icons.shuffle),
+                    label: const Text('Sortear e gerar links'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          if (_drawNeedsRefresh)
+            const _OnlineNotice(
+              icon: Icons.warning_amber_outlined,
+              message: 'Há alterações desde o sorteio. Refazer o sorteio invalida os links anteriores.',
+              isWarning: true,
+            ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.link,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Links individuais',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          'Confira o participante e o destinatário. Encaminhe manualmente pelo WhatsApp.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: !_draftReady || _busy
+                        ? null
+                        : _confirmAndCreateDraw,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refazer'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          for (final link in _links)
+            _OnlineLinkCard(
+              link: link,
+              revoked: _revokedLinks.contains(link.url),
+              onWhatsApp: () => _openWhatsApp(link),
+              onRevoke: () => _revokeLink(link),
+            ),
+        ],
+      ],
+    );
+  }
+
+  Widget _stepList(
+    BuildContext context, {
+    required String step,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    required List<Widget> children,
+  }) => ListView(
+    padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+    children: [
+      Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 940),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _OnlineSectionHeading(
+                step: step,
+                title: title,
+                subtitle: subtitle,
+                trailing: trailing,
+              ),
+              const SizedBox(height: 20),
+              ...children.map(
+                (child) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: child,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _ParticipantInput {
@@ -1168,6 +1370,526 @@ class _OnlineGroupInput {
   final Set<String> participantIds;
 
   void dispose() => name.dispose();
+}
+
+class _OnlineWorkspaceHeader extends StatelessWidget {
+  const _OnlineWorkspaceHeader({
+    required this.eventName,
+    required this.user,
+    required this.draftReady,
+    required this.draftSaved,
+  });
+
+  final String eventName;
+  final User? user;
+  final bool draftReady;
+  final bool draftSaved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final title = eventName.isEmpty ? 'Organize seu sorteio' : eventName;
+    final status = !draftReady
+        ? 'Carregando rascunho'
+        : eventName.isEmpty
+        ? 'Pronto para começar'
+        : draftSaved
+        ? 'Salvo neste dispositivo'
+        : 'Salvando alterações';
+    final intro = user == null
+        ? 'Quatro etapas simples, sem revelar os pares na área do organizador.'
+        : 'Conectado como ${user!.displayName ?? user!.email ?? 'organizador'}';
+    final titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          intro,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+          ),
+        ),
+      ],
+    );
+    final stateChip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: theme.colorScheme.onPrimary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            draftReady && (draftSaved || eventName.isEmpty)
+                ? Icons.cloud_done_outlined
+                : Icons.sync,
+            size: 18,
+            color: theme.colorScheme.onPrimary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            status,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1040),
+        child: Container(
+          width: double.infinity,
+          margin: EdgeInsets.fromLTRB(
+            width < 600 ? 12 : 20,
+            12,
+            width < 600 ? 12 : 20,
+            12,
+          ),
+          padding: EdgeInsets.all(width < 600 ? 18 : 24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: width < 640
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [titleBlock, const SizedBox(height: 14), stateChip],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: titleBlock),
+                    const SizedBox(width: 20),
+                    stateChip,
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OnlineErrorBanner extends StatelessWidget {
+  const _OnlineErrorBanner({required this.message, required this.onDismiss});
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1040),
+        child: Card(
+          color: colors.errorContainer,
+          child: ListTile(
+            leading: Icon(Icons.error_outline, color: colors.onErrorContainer),
+            title: Text(
+              message,
+              style: TextStyle(color: colors.onErrorContainer),
+            ),
+            trailing: IconButton(
+              tooltip: 'Dispensar aviso',
+              onPressed: onDismiss,
+              icon: Icon(Icons.close, color: colors.onErrorContainer),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OnlineNotice extends StatelessWidget {
+  const _OnlineNotice({
+    required this.icon,
+    required this.message,
+    this.isWarning = false,
+  });
+
+  final IconData icon;
+  final String message;
+  final bool isWarning;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final background = isWarning
+        ? colors.tertiaryContainer
+        : colors.secondaryContainer;
+    final foreground = isWarning
+        ? colors.onTertiaryContainer
+        : colors.onSecondaryContainer;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: foreground),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: foreground),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnlineSectionHeading extends StatelessWidget {
+  const _OnlineSectionHeading({
+    required this.step,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  final String step;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          step,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Text(title, style: Theme.of(context).textTheme.headlineSmall),
+      const SizedBox(height: 4),
+      Text(
+        subtitle,
+        style: Theme.of(context).textTheme.bodyLarge
+            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+      if (trailing != null) ...[const SizedBox(height: 10), trailing!],
+    ],
+  );
+}
+
+class _OnlineParticipantCard extends StatelessWidget {
+  const _OnlineParticipantCard({
+    super.key,
+    required this.row,
+    required this.index,
+    required this.enabled,
+    required this.canRemove,
+    required this.onActiveChanged,
+    required this.onRemove,
+  });
+
+  final _ParticipantInput row;
+  final int index;
+  final bool enabled;
+  final bool canRemove;
+  final ValueChanged<bool> onActiveChanged;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  row.name.text.trim().isEmpty
+                      ? 'Participante ${index + 1}'
+                      : row.name.text.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              if (canRemove)
+                IconButton(
+                  tooltip: 'Remover participante',
+                  onPressed: enabled ? onRemove : null,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: row.name,
+            enabled: enabled,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Nome do participante',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: row.recipient,
+            enabled: enabled,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Destinatário do link',
+              helperText: 'Pode ser o próprio participante ou seu responsável.',
+              prefixIcon: Icon(Icons.forward_to_inbox_outlined),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: row.phone,
+            enabled: enabled,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'WhatsApp do destinatário (opcional)',
+              hintText: '+55 11 99999-9999',
+              prefixIcon: Icon(Icons.call_outlined),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Participa do sorteio'),
+            subtitle: Text(
+              row.isActive ? 'Será incluído no sorteio.' : 'Fora do sorteio.',
+            ),
+            value: row.isActive,
+            onChanged: enabled ? onActiveChanged : null,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _OnlineStepFooter extends StatelessWidget {
+  const _OnlineStepFooter({required this.label, required this.nextIndex});
+
+  final String label;
+  final int nextIndex;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerRight,
+    child: FilledButton.tonalIcon(
+      onPressed: () => DefaultTabController.of(context).animateTo(nextIndex),
+      icon: const Icon(Icons.arrow_forward),
+      label: Text(label),
+    ),
+  );
+}
+
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({required this.label, required this.icon});
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) =>
+      Chip(avatar: Icon(icon, size: 18), label: Text(label));
+}
+
+class _OnlineEmptyCard extends StatelessWidget {
+  const _OnlineEmptyCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 30, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 12),
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(message),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SummaryTile extends StatelessWidget {
+  const _SummaryTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: MediaQuery.sizeOf(context).width < 600
+        ? MediaQuery.sizeOf(context).width - 64
+        : 190,
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 12),
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 3),
+            Text(value, style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _OnlineLinkCard extends StatelessWidget {
+  const _OnlineLinkCard({
+    required this.link,
+    required this.revoked,
+    required this.onWhatsApp,
+    required this.onRevoke,
+  });
+
+  final OnlineLink link;
+  final bool revoked;
+  final VoidCallback onWhatsApp;
+  final VoidCallback onRevoke;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.person_outline,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      link.participantName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Enviar para ${link.recipientName}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (revoked)
+                const Chip(
+                  avatar: Icon(Icons.link_off, size: 18),
+                  label: Text('Revogado'),
+                ),
+            ],
+          ),
+          if (!revoked) ...[
+            const SizedBox(height: 14),
+            SelectableText(
+              link.url,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: onWhatsApp,
+                  icon: const Icon(Icons.chat_outlined),
+                  label: const Text('Preparar WhatsApp'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onRevoke,
+                  icon: const Icon(Icons.link_off_outlined),
+                  label: const Text('Revogar link'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 class _OnlineSetupNotice extends StatelessWidget {

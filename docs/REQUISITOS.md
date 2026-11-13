@@ -143,6 +143,7 @@ Convenções: **DEVE** é obrigatório; **NÃO DEVE** é proibido; **PODE** é o
 - **RF-UX-08:** o app NÃO DEVE depender apenas de cor para indicar estado.
 - **RF-UX-09:** resultados DEVEM ficar ocultos por padrão e ser revelados individualmente.
 - **RF-UX-10:** no modo local, o app DEVE deixar explícito que o organizador pode ver todos os resultados. No modo online, deve explicar que a tela do organizador não mostra os pares e que responsáveis/convidados conhecem o resultado que recebem.
+- **RF-UX-11:** o organizador online DEVE configurar o evento em áreas separadas e navegáveis para dados do evento, participantes, grupos e revisão/links; cada área deve indicar seu estado e a próxima ação, sem concentrar todos os controles em uma única tela longa.
 
 ### 2.9 Modo online — Fase 6
 
@@ -157,6 +158,7 @@ Convenções: **DEVE** é obrigatório; **NÃO DEVE** é proibido; **PODE** é o
 - **RF-ONL-09:** backup local não inclui nem exporta resultados ou links de eventos online.
 - **RF-ONL-10:** interface informa que qualquer pessoa que obtiver um link pode abrir aquele resultado.
 - **RF-ONL-11:** o rascunho do formulário online DEVE ser restaurado no mesmo dispositivo/origem após reabrir a tela; rascunhos e links bearer ficam fora do backup local e não são sincronizados entre dispositivos.
+- **RF-ONL-12:** login Google online DEVE usar somente a configuração Firebase do build, manter emuladores desligados por padrão e explicar erros de configuração/domínio/provedor sem expor dados pessoais ou credenciais.
 
 ## 3. Regras de negócio detalhadas
 

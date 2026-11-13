@@ -479,12 +479,12 @@ Use exclusivamente dados fictícios e o projeto demo abaixo. O prefixo `demo-` f
 4. Terminal 3, raiz do repositório, inicie o app:
 
    ```powershell
-   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
+   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8081 --dart-define=FIREBASE_API_KEY=demo-key --dart-define=FIREBASE_APP_ID=demo-app --dart-define=FIREBASE_MESSAGING_SENDER_ID=demo-sender --dart-define=FIREBASE_AUTH_DOMAIN=demo-amigosecreto.firebaseapp.com --dart-define=FIREBASE_PROJECT_ID=demo-amigosecreto --dart-define=ONLINE_DRAW_API_BASE_URL=http://127.0.0.1:8090 --dart-define=USE_FIREBASE_EMULATORS=true
    ```
 
    Se o Flutter não conseguir iniciar o Chrome automaticamente, mantenha o comando `web-server` ativo e abra manualmente `http://127.0.0.1:8081` no Chrome. Use `127.0.0.1` também nos links gerados; `localhost` e `127.0.0.1` são origens diferentes no navegador e podem resolver para interfaces de rede distintas.
 
-5. Na página “Evento online”, entre por Google usando o fluxo simulado pelo Auth Emulator. Não use sua conta Google real. Cadastre quatro pessoas fictícias (Ana Teste, Bruno Teste, Caio Teste, Dora Teste) e destinatários diretos fictícios. Em “Grupos e restrições”, crie grupos dos tipos Família, Casal e Outro, selecione integrantes e alterne a opção “Impedir sorteios dentro do grupo”. Aguarde “Rascunho salvo neste dispositivo”, recarregue a rota e confirme que participantes, grupos, tipos, membros e opções de restrição retornam.
+5. Na página “Evento online”, entre por Google usando o fluxo simulado pelo Auth Emulator. Se a janela mostrar **No Google.com accounts exist in the Auth Emulator**, selecione **Add new account** e crie uma identidade fictícia; não use sua conta nem senha Google real. Cadastre quatro pessoas fictícias (Ana Teste, Bruno Teste, Caio Teste, Dora Teste) e destinatários diretos fictícios. Em “Grupos e restrições”, crie grupos dos tipos Família, Casal e Outro, selecione integrantes e alterne a opção “Impedir sorteios dentro do grupo”. Aguarde “Rascunho salvo neste dispositivo”, recarregue a rota e confirme que participantes, grupos, tipos, membros e opções de restrição retornam.
 6. Gere o sorteio. Confirme que a lista contém participante, destinatário e link, mas não mostra quem cada um tirou. Abra os links em uma janela anônima do Chrome, sem login: cada link deve revelar um resultado; recarregar o mesmo link deve manter esse resultado. Um token inventado deve mostrar link indisponível.
 7. Volte à página do organizador, revogue um link com confirmação e reabra esse link anonimamente. Deve aparecer link indisponível. No botão WhatsApp, confirme que a mensagem tem apenas o link; feche a página do WhatsApp sem enviar.
 8. Edite os dados ou a restrição do grupo após o sorteio. Confirme que a tela avisa que os links atuais ainda mostram o sorteio anterior. Escolha “Refazer sorteio e invalidar links atuais” e confirme. Os links da revisão anterior devem deixar de funcionar; os novos links devem revelar um único resultado cada. A nova lista exige encaminhar os links novamente.
@@ -526,6 +526,19 @@ Validação manual confirmada pelo usuário em 2026-11-12: entrar com a identida
 
 **Gestão de vários eventos online:** na raiz do app, abra a lista “Eventos online”, crie dois eventos fictícios, aguarde o rascunho salvar, atualize a página e reabra cada um. Confirme que nomes, participantes, revisões e links correspondem ao evento selecionado; refazer/revogar um evento não deve alterar o outro. O teste deve usar a mesma origem do navegador (`http://127.0.0.1:8081`); trocar entre `localhost` e `127.0.0.1`, porta, perfil ou navegador acessa outro IndexedDB.
 
+### 19.1 Login Google real (pendente de projeto Firebase)
+
+Depois de criar/configurar um projeto real conforme `docs/DEPLOY.md`, valide primeiro em staging com dados fictícios:
+
+1. Confirme que `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID` e `FIREBASE_AUTH_DOMAIN` pertencem ao mesmo app Web Firebase e que `USE_FIREBASE_EMULATORS=false`.
+2. Inclua o domínio Hosting exato em Authentication → Settings → Authorized domains e habilite Google em Authentication → Sign-in method.
+3. Abra o domínio HTTPS de staging e entre com uma conta Google de teste autorizada pelo projeto. Confirme que o popup retorna ao app e que a tela mostra o estado autenticado após recarregar.
+4. Crie um evento fictício. Confirme que a API aceita o Firebase ID token para a conta proprietária; sem login, os endpoints administrativos devem responder 401 e a conta diferente deve receber 403.
+5. Gere, revele e revogue links fictícios; confirme que a revelação pública não pede login, que cada link revela somente um resultado e que revogação/exclusão invalidam o link.
+6. No Cloud Run, confirme que `FIREBASE_AUTH_EMULATOR_HOST` está ausente e que a conta de serviço dedicada tem somente os papéis necessários, incluindo `roles/datastore.user` no projeto Firestore.
+
+**Estado:** não executado. O projeto Firebase real ainda não existe; a validação disponível até aqui usa Auth/Firestore Emulators.
+
 ## 19. Fase 8 — Docker e automação
 
 Com Docker Desktop instalado e iniciado, na raiz do repositório:
@@ -552,3 +565,9 @@ CI: `.github/workflows/verify.yml` repete formatação, análise, testes, build 
 Como verificações independentes de contêiner, foram executados no host: `dart format --output=none --set-exit-if-changed .` (118 arquivos, nenhum alterado), `flutter analyze` (sem issues), `flutter test` (92 passaram), `flutter build web --release` (concluído), `dart analyze` em `server/` (sem issues) e `dart test` em `server/` (9 passaram; 3 testes do Firestore Emulator ignorados porque `FIRESTORE_EMULATOR_HOST` não foi definido). `java -version` também falha por Java ausente do PATH; os três testes de integração precisam do Emulator e permanecem pendentes. `git diff --check` terminou sem erros, com avisos de normalização LF/CRLF.
 
 **Validação com Docker em 2026-11-13:** `docker compose config` passou; `docker compose up --build --detach` concluiu depois dos ajustes descritos em `docs/PROGRESSO.md`. Os três serviços ficaram `healthy`; API respondeu `{"status":"ok"}` e Web/Auth/Firestore responderam HTTP 200. `docker compose --profile test run --build --rm flutter-tests` passou: formatação (118 arquivos, 0 alterados), análise Flutter sem issues, 92 testes e build Web release (93,7 s). `docker compose --profile test run --build --rm api-tests` passou com 12 testes, incluindo os 3 testes de integração do Firestore Emulator (regras, lote de 200 resultados e concorrência). A conferência visual/interativa da Web no Chrome não foi concluída: a ferramenta de automação encerrou a ação porque não conseguiu identificar com confiança a URL atual do navegador. A resposta HTTP 200 confirma o serviço web, mas não substitui a conferência da interface/autenticação/persistência pelo navegador.
+
+### Conferência do fluxo online após a reorganização
+
+Validar no Chrome com Auth/Firestore Emulator e dados fictícios: (1) criar um evento e percorrer as abas **Evento**, **Participantes**, **Grupos** e **Revisão e links**, confirmando que cada área contém os controles correspondentes; (2) navegar entre abas sem perder dados, recarregar a página e confirmar restauração do rascunho; (3) verificar progresso/estado de salvamento e bloqueio de ações dependentes de login; (4) criar grupos com restrições e concluir um sorteio, confirmando que a revisão apresenta os grupos e a tela de links nunca mostra pares; (5) conferir layout em celular e desktop, teclado, foco, escala de texto e alvos de toque; (6) confirmar que lista, exclusão, revogação e cópia continuam funcionando e que nenhuma ação envia WhatsApp automaticamente.
+
+**Estado em 2026-11-13:** as quatro áreas, o tema visual e os cartões de lista foram implementados. Formatação, `flutter analyze` e o build Flutter Web no Docker passaram; os serviços permaneceram saudáveis e os endpoints responderam. A navegação manual visual/interativa ainda precisa ser conferida no Chrome.

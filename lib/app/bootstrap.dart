@@ -27,9 +27,9 @@ Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    if (FirebaseConfiguration.isConfigured && Firebase.apps.isEmpty) {
+    if (FirebaseConfiguration.canInitialize && Firebase.apps.isEmpty) {
       await Firebase.initializeApp(options: FirebaseConfiguration.options);
-      if (const bool.fromEnvironment('USE_FIREBASE_EMULATORS')) {
+      if (FirebaseConfiguration.useEmulators) {
         await FirebaseAuth.instance.useAuthEmulator('127.0.0.1', 9099);
       }
     }

@@ -1,6 +1,6 @@
-# Preparar publicação Web
+# Preparar Firebase e publicação Web
 
-Este guia descreve como preparar o artefato estático do Flutter Web. A configuração automatizada com Docker/CI está planejada na Fase 8. Este documento não configura credenciais nem publica o aplicativo; criação de recursos e deploy real exigem autorização explícita.
+Este guia cobre a configuração do login Google real, Firebase Hosting, Firestore e API Cloud Run antes da publicação. Nenhum projeto Firebase real foi criado ou conectado nesta entrega; nenhum deploy foi feito.
 
 ## 1. Gerar e revisar o artefato
 
@@ -36,16 +36,37 @@ O artefato fica em `build/web/`. Faça a revisão final desse diretório e confi
 
 O modo local não possui backend nem sincronização. Publicá-lo não hospeda eventos ou backups, e cada navegador mantém dados separados por origem. Backups contêm telefones e resultados e devem ser guardados fora do site, em local seguro. O modo online usa serviço Cloud Run/Firebase e ainda não foi publicado; a configuração e o deploy desse serviço exigem autorização e uma revisão separadas.
 
-## 4. Automação planejada na Fase 8
+## 4. Preparação do projeto Firebase e Google Authentication
+
+Use um projeto separado para produção. A criação do projeto, ativação de billing e recursos em nuvem podem gerar custos e precisam ser concluídas pelo proprietário da conta Google.
+
+1. No Firebase Console, crie ou selecione o projeto e confirme o ID do projeto. No Cloud Run, Firebase Hosting e no serviço Dart, use o mesmo projeto.
+2. Crie o site padrão do Firebase Hosting antes de registrar o app Web. Para projetos novos, o site padrão pode não ser criado automaticamente. O domínio `authDomain` da configuração Firebase Web vem desse site.
+3. Registre um app Web Firebase e guarde estes valores da configuração do app: `apiKey`, `appId`, `messagingSenderId`, `projectId` e `authDomain`. Eles identificam o app cliente e são incorporados ao JavaScript do site; a chave Web não é uma credencial de servidor. Use o `authDomain` informado pelo próprio app, pois a ID do site Hosting pode diferir do ID do projeto.
+4. Em **Authentication → Sign-in method**, habilite **Google** e escolha o e-mail de suporte. Em **Authentication → Settings → Authorized domains**, cadastre os domínios exatos usados no app publicado, incluindo o domínio Hosting (`*.web.app`) e o domínio personalizado, se houver. O `authDomain` deve corresponder à configuração do app Web.
+5. Crie o banco Cloud Firestore na localização desejada e publique as regras versionadas com o workflow. As regras do cliente negam todo acesso às coleções privadas; a API acessa Firestore usando sua identidade Cloud Run.
+6. Para domínio personalizado, configure primeiro o domínio no Hosting, cadastre-o em Authorized domains e use o `authDomain` adequado à estratégia escolhida. Mantenha HTTPS. O fluxo atual usa `signInWithPopup` do Firebase Auth.
+
+A ordem site Hosting → app Web evita registrar uma configuração com `authDomain` incorreto. Consulte a documentação oficial sobre [Google sign-in para Web](https://firebase.google.com/docs/auth/web/google-signin) e [site padrão do Firebase Hosting](https://firebase.google.com/docs/hosting/default-site).
+
+## 5. Configuração do Cloud Run e CI
 
 O objetivo registrado no plano é usar Docker Compose para desenvolvimento e testes locais com API, Flutter Web e Firebase Emulators. Para produção, o Flutter Web será publicado no Firebase Hosting e a imagem Dart no Cloud Run. O Firebase de produção continua gerenciado pelo provedor; Docker não o empacota como um serviço local. Requisitos de projeto, Authentication Google, Firestore, IAM, domínio, segredos do CI e reversão estão descritos como entregas planejadas em `docs/PLANO_IMPLEMENTACAO.md`, seção 11. Nenhum deploy é realizado por este roteiro.
 
 ### Workflow manual de staging
 
-O arquivo `.github/workflows/deploy-staging.yml` prepara uma publicação manual e separada da CI. Antes de habilitá-lo, configure no GitHub um Environment `staging` com revisores obrigatórios e estas variáveis de ambiente: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOYER_SERVICE_ACCOUNT`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `ARTIFACT_REGISTRY_REPOSITORY`, `CLOUD_RUN_SERVICE`, `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_AUTH_DOMAIN` e `PUBLIC_BASE_URL`. A chave Firebase Web identifica o app cliente e acaba embutida no bundle Web; não coloque credenciais de serviço nessas variáveis.
+O arquivo `.github/workflows/deploy-staging.yml` prepara uma publicação manual e separada da CI. Antes de habilitá-lo, configure no GitHub um Environment `staging` com revisores obrigatórios e estas variáveis: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOYER_SERVICE_ACCOUNT`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `ARTIFACT_REGISTRY_REPOSITORY`, `CLOUD_RUN_SERVICE`, `FIREBASE_PROJECT_ID`, `FIREBASE_WEB_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_AUTH_DOMAIN` e `PUBLIC_BASE_URL`. Use os valores do app Web real, nunca os valores `demo-*`. A chave Firebase Web identifica o app cliente e fica visível no bundle Web; não coloque credenciais de serviço nessas variáveis.
 
-O workflow só aceita o projeto identificado como staging, exige a entrada manual `yes`, autentica o deploy com Workload Identity Federation, envia a imagem da API ao Artifact Registry, atualiza o Cloud Run configurado e depois publica Web e regras no Firebase Hosting/Firestore daquele projeto. O serviço Cloud Run fica acessível pela internet para receber revelações e chamadas do app; a API valida ID token e propriedade do evento nas ações administrativas. Configure o service account de execução com o menor papel Firestore necessário e restrinja a federação ao repositório/branch. A etapa não instala credenciais JSON e nenhuma configuração de produção está incluída.
+O workflow só aceita o projeto identificado como staging, exige a entrada manual `yes`, autentica o deploy com Workload Identity Federation, envia a imagem da API ao Artifact Registry, atualiza o Cloud Run e publica Web e regras no Firebase Hosting/Firestore daquele projeto. O serviço Cloud Run fica público para receber revelações e chamadas do app; a API valida o ID token do Firebase e a propriedade do evento nas ações administrativas. Use uma conta de serviço de execução dedicada com `roles/datastore.user` no projeto Firestore; restrinja a federação ao repositório e à branch `main`. A CLI Firebase usa Application Default Credentials da federação; não crie nem commite chave JSON de serviço. Consulte [identidade de serviço do Cloud Run](https://docs.cloud.google.com/run/docs/configuring/services/service-identity), [permissões Firestore](https://firebase.google.com/docs/firestore/security/iam) e [autenticação CI da Firebase CLI](https://firebase.google.com/docs/cli#use_the_cli_with_ci_systems).
 
 O workflow executa smoke checks HTTP para `/health` da API e a raiz do Hosting após publicar. Para reversão, selecione uma versão anterior no histórico de Hosting e direcione o tráfego Cloud Run para uma revisão anterior pelo console do Google Cloud; verifique de novo a URL pública e a saúde da API.
 
-Esse workflow é apenas preparação versionada: não foi executado. Criar recursos, conceder IAM, configurar um projeto, billing, domínio ou fazer qualquer deploy requer autorização específica e revisão da configuração do projeto antes da primeira execução.
+## 6. Verificação antes da produção
+
+1. Publique primeiro em staging com dados fictícios. Confirme que o login abre o Google real e retorna ao domínio Hosting, que o estado de autenticação persiste após recarga e que o serviço recebe o ID token.
+2. Crie, sorteie, revele, revogue e exclua um evento fictício. Confirme que a tela administrativa não mostra os pares, os links revogados falham e regras Firestore bloqueiam leitura anônima.
+3. Verifique no Firebase Authentication os domínios autorizados e no Cloud Run a identidade de execução. Confirme que a revisão Cloud Run não tem `FIREBASE_AUTH_EMULATOR_HOST` e que o build Web foi produzido com `USE_FIREBASE_EMULATORS=false`.
+4. Confirme saúde em `/health`, HTTPS, rotas Flutter após recarga, logs sem dados pessoais/tokens e procedimento de reversão.
+5. Só então configure o ambiente de produção separado e solicite autorização explícita antes de executar qualquer publicação pública.
+
+O workflow de staging é apenas preparação versionada e ainda não foi executado. O projeto Firebase real, billing, recursos, domínios, IAM e login real continuam pendentes; produção e abertura pública permanecem bloqueadas até essa configuração e autorização específica.

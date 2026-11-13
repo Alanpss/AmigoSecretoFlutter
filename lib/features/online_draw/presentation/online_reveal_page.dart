@@ -23,7 +23,7 @@ class _OnlineRevealPageState extends State<OnlineRevealPage> {
 
   Future<OnlineResult?> _load() {
     final api = const String.fromEnvironment('ONLINE_DRAW_API_BASE_URL');
-    if (api.isEmpty || !FirebaseConfiguration.isConfigured) {
+    if (api.isEmpty || !FirebaseConfiguration.canInitialize) {
       return Future.error(const OnlineDrawClientException());
     }
     return OnlineDrawClient(
