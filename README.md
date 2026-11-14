@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O projeto Firebase `amigo-secreto-blacks`, o app Web, o Hosting e o Firestore já foram criados pelo usuário. Google está habilitado e os domínios principais estão autorizados; login real, API Cloud Run e publicação do app ainda não foram validados. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
+> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O projeto Firebase `amigo-secreto-blacks`, o app Web, o Hosting e o Firestore já foram criados pelo usuário. O login Google real foi validado localmente; API Cloud Run, fluxo online completo e publicação ainda não foram validados. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
 
 ## Descrição para o GitHub
 
