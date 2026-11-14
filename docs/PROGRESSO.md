@@ -24,11 +24,11 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore em `southamerica-east1`, Google ativado, domínios autorizados e APIs do workflow habilitadas conforme relato do usuário; seções 41–49 | Vincular billing após revisar custos e criar Artifact Registry de staging; depois Cloud Run, IAM/WIF e Environment do GitHub |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore em `southamerica-east1`, Google, domínios e APIs configurados; billing Blaze e Artifact Registry confirmados pelo usuário; seções 41–50 | Criar conta de serviço runtime com acesso ao Firestore; depois conta de deploy, IAM/WIF e Environment do GitHub |
 
 ## 3. Ponto exato de retomada
 
-Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. Os projetos Firebase `amigo-secreto-blacks` (login real validado localmente) e `amigo-secreto-oculto` (staging, Hosting, Firestore e Google Auth configurados) foram criados pelo usuário. O usuário relata que habilitou as APIs necessárias ao workflow no projeto de staging. O Firestore está em `southamerica-east1`; nenhum deploy foi feito nem mensagem real enviada.
+Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. Os projetos Firebase `amigo-secreto-blacks` (login real validado localmente) e `amigo-secreto-oculto` (staging, Hosting, Firestore e Google Auth configurados) foram criados pelo usuário. O usuário relata APIs necessárias habilitadas, plano Blaze ativo e repositório Artifact Registry criado em `southamerica-east1`. Nenhum deploy foi feito nem mensagem real enviada.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados e APIs necessárias habilitadas conforme relato do usuário. Próximo passo: após revisar custos e vincular billing, criar o repositório Docker no Artifact Registry conforme `docs/DEPLOY.md`. Cloud Run, IAM/WIF, CI e deploy seguem pendentes. Não executar workflow nem publicar sem revisão e autorização específica.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados, APIs necessárias habilitadas, plano Blaze e repositório Docker. Próximo passo: criar a identidade de execução `online-draw-staging-runtime` e conceder somente `Cloud Datastore User` (`roles/datastore.user`) no projeto de staging. Depois criar a identidade de deploy e configurar WIF conforme `docs/DEPLOY.md`. CI/deploy seguem pendentes; não executar workflow nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -634,6 +634,14 @@ As capturas do Firebase Console no projeto `amigo-secreto-oculto` mostram o prov
 
 O usuário informou que habilitou todas as APIs necessárias no projeto `amigo-secreto-oculto`. O estado foi registrado como confirmação do usuário, sem acesso independente ao Console. Nenhum recurso de cobrança, Artifact Registry, Cloud Run, IAM/WIF, workflow ou deploy foi criado pelo agente.
 
-**Próxima ação:** revisar os custos e vincular uma conta Cloud Billing ativa ao projeto se o usuário decidir prosseguir; isso altera o Firebase de Spark para Blaze. Em seguida, criar o repositório Docker `amigo-secreto-staging` no Artifact Registry, região `southamerica-east1`. Continuar contas de serviço e WIF depois.
+**Próxima ação registrada naquela atualização:** revisar custos, vincular billing e criar o repositório Artifact Registry; concluída pelo usuário conforme seção 50. Seguir agora com a conta de serviço runtime.
 
 **Verificação:** documentação atualizada; `git diff --check` passou sem erros. Nenhum teste ou comando Cloud foi executado pelo agente.
+
+## 50. Billing e Artifact Registry de staging confirmados — 2026-11-14
+
+O usuário informou que o projeto `amigo-secreto-oculto` passou para o plano Firebase Blaze e criou o repositório Docker. A URL fornecida, `southamerica-east1-docker.pkg.dev/amigo-secreto-oculto/amigo-secreto-staging`, confirma o ID do projeto, região `southamerica-east1` e nome do repositório `amigo-secreto-staging`.
+
+**Próxima ação:** no Google Cloud Console, criar a conta de serviço `online-draw-staging-runtime` e conceder a ela o papel `Cloud Datastore User` (`roles/datastore.user`) no projeto de staging. Não criar chave JSON. Depois será criada separadamente a conta `github-staging-deployer`, com permissões limitadas, e configurado o WIF.
+
+**Verificação:** os dados do repositório e a mudança para Blaze foram registrados a partir da confirmação do usuário. `git diff --check` passou sem erros. Nenhum comando Cloud, teste, alteração de IAM ou deploy foi executado pelo agente.
