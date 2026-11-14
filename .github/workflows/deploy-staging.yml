@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       confirm_staging:
-        description: Type yes to deploy this revision to the configured staging project
+        description: Select yes to deploy this revision to the configured staging project
         required: true
         type: choice
-        options: [no, yes]
+        options: ["no", "yes"]
 
 permissions:
   contents: read
