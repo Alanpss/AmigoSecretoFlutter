@@ -24,7 +24,7 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; infraestrutura staging e Environment `staging` confirmados; usuário confirmou todos os valores e captura confirma branch `main`; correção do input manual de deploy em andamento; seções 41–63 | Publicar a correção no `main`, confirmar que o formulário mostra `no/yes`, executar o deploy autorizado e validar os smoke checks |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; infraestrutura staging e Environment `staging` confirmados; API staging publicada; primeira tentativa parou no build Web por shell de login removendo Flutter do `PATH`; correção em andamento; seções 41–64 | Publicar a correção do shell no `main`, repetir o workflow autorizado, confirmar Hosting/regras e smoke checks; orientar validação manual do fluxo online |
 
 ## 3. Ponto exato de retomada
 
@@ -746,10 +746,16 @@ No momento da revisão, o ambiente Git estava limpo na branch `main`, com HEAD `
 
 **Verificação:** inspeção estática dos arquivos listados acima; `git status` mostrou a branch `main` sincronizada com `origin/main` em `7ab143a`. CI Verify #1 foi mostrado pelo usuário como concluído com sucesso. O formulário do GitHub foi aberto no Chrome e exibiu opções `false/true`; foi cancelado antes de disparar o workflow. Nenhum teste, comando Cloud ou deploy foi executado.
 
-## 63. Corrigindo a confirmação do workflow de staging — 2026-11-14
+## 63. Correção da confirmação do workflow de staging — 2026-11-14
 
 A interface do GitHub renderizou as opções sem aspas `[no, yes]` como valores booleanos `false/true`, enquanto a condição do job compara o input com a string `yes`. A lista foi ajustada para `options: ["no", "yes"]` e a descrição para “Select yes…”, de modo que a interface e a condição concordem. A autorização explícita de staging já foi concedida pelo usuário; ainda não houve publicação.
 
-**Próxima ação:** conferir que o formulário atualizado oferece `no/yes`, selecionar `yes` na branch `main`, iniciar o workflow e acompanhar autenticação WIF, build, Cloud Run, Hosting/regras e smoke checks. Depois registrar a URL/revisão resultantes sem copiar valores sensíveis e orientar validação manual de login e fluxo online com dados fictícios.
+**Resultado:** após publicar a correção, o formulário mostrou `no/yes` e o usuário autorizou explicitamente a execução em staging. O workflow #1 foi iniciado na branch `main`, commit `775484f3f48747cbf4d483d9381ebbb1f85aeca3`. Autenticação WIF, build/push da imagem e deploy Cloud Run passaram; a revisão `amigo-secreto-api-staging-00001-f8h` passou a servir 100% do tráfego, com URL `https://amigo-secreto-api-staging-833149683923.southamerica-east1.run.app`. O build Web falhou antes da publicação no Hosting e das regras/smoke checks, com `/bin/sh: 2: flutter: not found`.
 
-**Verificação:** revisão do YAML e das opções exibidas pelo GitHub antes da correção; formulário cancelado antes da execução. Nenhum teste local foi adicionado ou executado; nenhum deploy foi iniciado nesta etapa.
+## 64. Corrigindo o shell do build Web de staging — 2026-11-14
+
+O log da primeira tentativa mostrou que o workflow executava `/bin/sh -lc` dentro da imagem `flutter-toolchain`. O shell de login alterava o `PATH` definido pelo Dockerfile e não encontrava Flutter em `/opt/flutter/bin`. O comando foi alterado para `/bin/sh -c`, preservando o `PATH` da imagem. A API permanece publicada em staging; Hosting e regras Firestore ainda não foram publicados pelo workflow.
+
+**Próxima ação:** revisar a alteração, executar `git diff --check`, commitar e publicar a correção no `main`; repetir o workflow manual de staging com a confirmação `yes`; verificar build Web, publicação Hosting/regras e smoke checks. Depois orientar teste real de login e do fluxo online com dados fictícios. A autorização de staging do usuário continua aplicável; produção não está autorizada.
+
+**Verificação:** diagnóstico confirmado pelo log do GitHub Actions; alteração do YAML feita localmente. Ainda não foram executados `git diff --check`, novo build ou nova publicação; nenhum teste local foi adicionado.

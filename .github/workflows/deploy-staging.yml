@@ -126,7 +126,7 @@ jobs:
             --env FIREBASE_APP_ID \
             --env FIREBASE_MESSAGING_SENDER_ID --env FIREBASE_AUTH_DOMAIN \
             --env FIREBASE_PROJECT_ID --env ONLINE_DRAW_API_BASE_URL \
-            --entrypoint /bin/sh amigo-secreto-flutter-toolchain -lc '
+            --entrypoint /bin/sh amigo-secreto-flutter-toolchain -c '
               flutter build web --release \
                 --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
                 --dart-define=FIREBASE_APP_ID="$FIREBASE_APP_ID" \
