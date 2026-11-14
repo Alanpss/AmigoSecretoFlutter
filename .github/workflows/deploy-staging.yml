@@ -55,7 +55,11 @@ jobs:
             echo "::error::The GCP and Firebase project IDs must match for staging."
             exit 1
           fi
-          if [[ "$FIREBASE_PROJECT_ID" == demo-* || "$FIREBASE_API_KEY" == demo-* || \
+          if [[ "$GCP_PROJECT_ID" == "amigo-secreto-blacks" ]]; then
+            echo "::error::The production Firebase project cannot be used by the staging workflow. Create a separate staging project."
+            exit 1
+          fi
+          if [[ "$FIREBASE_PROJECT_ID" == demo-* || "$FIREBASE_WEB_API_KEY" == demo-* || \
                 "$FIREBASE_APP_ID" == demo-* || "$FIREBASE_MESSAGING_SENDER_ID" == demo-* || \
                 "$FIREBASE_AUTH_DOMAIN" == demo-* ]]; then
             echo "::error::Staging requires configuration from a real Firebase Web app, not demo values."
@@ -118,7 +122,8 @@ jobs:
             --target flutter-toolchain --tag amigo-secreto-flutter-toolchain .
           docker run --rm \
             --volume "$GITHUB_WORKSPACE/build:/workspace/build" \
-            --env FIREBASE_API_KEY --env FIREBASE_APP_ID \
+            --env "FIREBASE_API_KEY=${FIREBASE_WEB_API_KEY}" \
+            --env FIREBASE_APP_ID \
             --env FIREBASE_MESSAGING_SENDER_ID --env FIREBASE_AUTH_DOMAIN \
             --env FIREBASE_PROJECT_ID --env ONLINE_DRAW_API_BASE_URL \
             --entrypoint /bin/sh amigo-secreto-flutter-toolchain -lc '

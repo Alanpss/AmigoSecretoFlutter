@@ -24,7 +24,7 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; Firebase e Google Auth configurados; login real confirmado pelo usuário; seções 41–45 | Preparar backend/identidade de staging isolado; concluir fluxo online no Chrome e CI |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; Firebase e Google Auth configurados; login real confirmado; workflow de staging corrigido e guia de IAM/WIF documentado; seções 41–46 | Usuário criar projeto Firebase/GCP isolado de staging; depois configurar seus recursos e revisar CI |
 
 ## 3. Ponto exato de retomada
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, registrou o app Web e criou Hosting e Firestore; Google está habilitado, os domínios principais estão autorizados e o usuário confirmou o login real no build local em Chrome. A configuração pública foi recebida, sem incluir a chave no repositório. Próximo passo: preparar ambiente/backend de staging isolado, configurar Cloud Run e IAM/WIF e então validar o fluxo completo. CI e deploy seguem pendentes. Não acionar workflow de staging nem publicar sem revisão e autorização específica.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, registrou o app Web e criou Hosting e Firestore; Google está habilitado, os domínios principais estão autorizados e o usuário confirmou o login real no build local em Chrome. A configuração pública foi recebida, sem incluir a chave no repositório. O workflow de staging agora bloqueia o projeto de produção e usa o nome consistente para a chave Web; o guia documenta projeto isolado, IAM e WIF. Próximo passo: o usuário cria o projeto Firebase/GCP separado para staging e informa o ID e a região do banco. Cloud Run, IAM/WIF, CI e deploy seguem pendentes. Não executar workflow nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -599,3 +599,13 @@ O usuário confirmou que a autenticação Google real funcionou no build Flutter
 **Limites:** a API local ainda usa o projeto demo; portanto, essa validação não cobre chamadas autenticadas à API, persistência de eventos no Firestore real, sorteio online, revogação/revelação de links ou persistência de sessão após recarregar. Nenhum deploy ou recurso Cloud Run/IAM foi criado pelo agente. Nenhum teste automatizado foi executado nesta etapa.
 
 **Próximo passo:** criar/preparar um projeto separado de staging e configurar a identidade Cloud Run e Workload Identity Federation para GitHub Actions. Depois, executar o fluxo online completo e o CI. Manter o projeto atual reservado para produção até a definição explícita do destino de cada deploy.
+
+## 46. Preparação isolada de staging — 2026-11-14
+
+Ao revisar `.github/workflows/deploy-staging.yml`, encontrei uma inconsistência: o Environment fornece `FIREBASE_WEB_API_KEY`, mas a validação do build usava `FIREBASE_API_KEY`; com `set -u`, o workflow falharia antes de publicar. A validação agora usa o nome configurado e o contêiner de build recebe um alias explícito `FIREBASE_API_KEY`. O workflow também bloqueia o ID de produção `amigo-secreto-blacks`.
+
+`docs/DEPLOY.md` agora descreve o setup manual de um projeto de staging isolado, localização Firestore, APIs, Artifact Registry, contas de execução/deploy, permissões limitadas, condição WIF restrita ao repository ID `1444917641`, owner ID `63379011` e branch `main`, e Environment `staging` no GitHub. Nenhum recurso foi criado no Google Cloud, nenhum billing foi habilitado e nenhum workflow/deploy foi executado. A configuração inclui aviso de custos e não pede chave JSON.
+
+**Verificação:** `git diff --check` passou sem erros. Nenhum teste automatizado nem CI foram executados nesta alteração. O Google Cloud CLI não está instalado no ambiente local; o roteiro usa o Console Web para configuração, então não é pré-requisito desta etapa.
+
+**Próxima ação:** o usuário cria um projeto Firebase/GCP separado, por exemplo `amigo-secreto-blacks-staging`, cria o Firestore de staging na localização revisada e informa somente o ID do projeto, domínio Hosting `.web.app` e localização. Billing, IAM/WIF e deploy permanecem pendentes de configuração e revisão separadas.
