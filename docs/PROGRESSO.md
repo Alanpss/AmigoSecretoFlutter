@@ -24,11 +24,11 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting e Firestore em `southamerica-east1` criados pelo usuário; seções 41–47 | Confirmar Google Auth/domínios autorizados no staging; depois configurar billing conforme necessário, Cloud Run, Artifact Registry, IAM/WIF e Environment do GitHub |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore em `southamerica-east1`, Google ativado e domínios autorizados confirmados; seções 41–48 | Configurar APIs e Artifact Registry de staging; depois Cloud Run, IAM/WIF e Environment do GitHub |
 
 ## 3. Ponto exato de retomada
 
-Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. Os projetos Firebase `amigo-secreto-blacks` (login real validado localmente) e `amigo-secreto-oculto` (staging, Hosting e Firestore) foram criados pelo usuário. O Firestore de staging está em `southamerica-east1`; nenhum deploy foi feito nem mensagem real enviada.
+Fases 6 e 7 aceitas em 2026-11-12 após confirmações do usuário sobre os cenários manuais pendentes no Chrome. A Fase 7 foi commitada em `b5b9b68`. O usuário autorizou iniciar a Fase 8 após esse commit. Os projetos Firebase `amigo-secreto-blacks` (login real validado localmente) e `amigo-secreto-oculto` (staging, Hosting, Firestore e Google Auth configurados) foram criados pelo usuário. O Firestore de staging está em `southamerica-east1`; nenhum deploy foi feito nem mensagem real enviada.
 
 ## 4. Escopo entregue na Fase 1
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, registrou o app Web e criou Hosting e Firestore; Google está habilitado, os domínios principais estão autorizados e o usuário confirmou o login real no build local em Chrome. A configuração pública foi recebida, sem incluir a chave no repositório. O workflow de staging agora bloqueia o projeto de produção e usa o nome consistente para a chave Web; o guia documenta projeto isolado, IAM e WIF. Próximo passo: o usuário cria o projeto Firebase/GCP separado para staging e informa o ID e a região do banco. Cloud Run, IAM/WIF, CI e deploy seguem pendentes. Não executar workflow nem publicar sem revisão e autorização específica.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado e domínios autorizados. O workflow de staging bloqueia o projeto de produção e usa o nome consistente para a chave Web; o guia documenta projeto isolado, IAM e WIF. Próximo passo: configurar as APIs e o Artifact Registry de staging conforme `docs/DEPLOY.md`. Cloud Run, IAM/WIF, CI e deploy seguem pendentes. Não executar workflow nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -614,10 +614,18 @@ Ao revisar `.github/workflows/deploy-staging.yml`, encontrei uma inconsistência
 
 O usuário criou o projeto Firebase/GCP separado `amigo-secreto-oculto`, registrou nele o app Web, criou os sites Hosting `amigo-secreto-oculto.web.app` e `amigo-secreto-oculto.firebaseapp.com`, e criou o banco Firestore `(default)`. A captura do Console confirma edição Standard, modo Native e região `southamerica-east1`.
 
-**Ainda não confirmado para esse projeto:** provedor Google habilitado no Authentication e domínios Hosting incluídos em Authorized domains. A validação anterior de login Google foi feita no projeto `amigo-secreto-blacks` e não prova que o staging está configurado. Cloud Run, Artifact Registry, billing, contas de serviço, IAM/WIF, Environment do GitHub, execução de CI/deploy e fluxo online completo seguem pendentes.
+Na captura original, ainda faltava confirmar Google e Authorized domains; essa confirmação foi feita depois e está registrada na seção 48. O login real ainda não foi exercitado nesse staging. Cloud Run, Artifact Registry, billing, contas de serviço, IAM/WIF, Environment do GitHub, execução de CI/deploy e fluxo online completo seguem pendentes.
 
 `southamerica-east1` (São Paulo) pode ser usado como `GCP_REGION` para Cloud Run e Artifact Registry; a documentação oficial lista essa região para ambos. Essa configuração também deixa o serviço na região do Firestore.
 
 **Verificação desta atualização:** documentação revisada e `git diff --check` passou sem erros (Git exibiu apenas avisos de normalização LF/CRLF no Windows). Nenhum teste, comando Firebase/Google Cloud, criação de recurso ou deploy foi executado.
 
-**Próxima ação:** no Console Firebase do projeto `amigo-secreto-oculto`, confirmar Google em **Authentication → Sign-in method** e cadastrar `amigo-secreto-oculto.web.app` e `amigo-secreto-oculto.firebaseapp.com` em **Authentication → Settings → Authorized domains**. Depois, avançar para Cloud Run/Artifact Registry e IAM/WIF, conforme `docs/DEPLOY.md`; não acionar o workflow de deploy antes da revisão de variáveis e da confirmação explícita.
+**Próxima ação registrada naquela atualização:** confirmar Google e os domínios autorizados; concluída conforme a seção 48. Avançar agora para configurar APIs e Artifact Registry de staging; não acionar o workflow de deploy antes da revisão de variáveis e da confirmação explícita.
+
+## 48. Google Auth e domínios de staging confirmados — 2026-11-14
+
+As capturas do Firebase Console no projeto `amigo-secreto-oculto` mostram o provedor Google como **ativado** e os domínios `amigo-secreto-oculto.firebaseapp.com` e `amigo-secreto-oculto.web.app` em **Authorized domains**. `localhost` também está autorizado. Isso confirma a configuração do Console, mas o usuário ainda não confirmou o fluxo de login real usando o app desse projeto.
+
+**Próxima ação:** no Google Cloud Console, selecionar o projeto `amigo-secreto-oculto`, habilitar as APIs listadas em `docs/DEPLOY.md` e criar o repositório `amigo-secreto-staging` no Artifact Registry em `southamerica-east1`. Antes de vincular billing, revisar os custos indicados no guia. Depois configurar identidades IAM/WIF e o Environment do GitHub. Nenhum recurso Google Cloud foi alterado pelo agente.
+
+**Verificação desta atualização:** os dois screenshots foram revisados como evidência de provedor Google ativado e domínios listados. Documentação atualizada e `git diff --check` passou sem erros (com avisos de normalização LF/CRLF do Git no Windows); nenhum teste, comando Cloud, alteração de conta ou deploy foi executado.
