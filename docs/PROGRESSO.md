@@ -24,7 +24,7 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore em `southamerica-east1`, Google, domínios e APIs configurados; billing Blaze e Artifact Registry confirmados pelo usuário; seções 41–50 | Criar conta de serviço runtime com acesso ao Firestore; depois conta de deploy, IAM/WIF e Environment do GitHub |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore, Auth, APIs, billing Blaze e Artifact Registry confirmados pelo usuário; seção 51 registra conta runtime criada | Criar conta de deploy com permissões de projeto; depois escopos de Artifact Registry/conta runtime, IAM/WIF e Environment do GitHub |
 
 ## 3. Ponto exato de retomada
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados, APIs necessárias habilitadas, plano Blaze e repositório Docker. Próximo passo: criar a identidade de execução `online-draw-staging-runtime` e conceder somente `Cloud Datastore User` (`roles/datastore.user`) no projeto de staging. Depois criar a identidade de deploy e configurar WIF conforme `docs/DEPLOY.md`. CI/deploy seguem pendentes; não executar workflow nem publicar sem revisão e autorização específica.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados, APIs necessárias habilitadas, plano Blaze e repositório Docker. O usuário informou que criou a identidade runtime `online-draw-staging-runtime`; verificar se o papel Cloud Datastore User foi aplicado. Próximo passo: criar a identidade de deploy `github-staging-deployer` com os papéis de projeto listados em `docs/DEPLOY.md`. Depois configurar permissões com escopo restrito e WIF. CI/deploy seguem pendentes; não executar workflow nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -642,6 +642,14 @@ O usuário informou que habilitou todas as APIs necessárias no projeto `amigo-s
 
 O usuário informou que o projeto `amigo-secreto-oculto` passou para o plano Firebase Blaze e criou o repositório Docker. A URL fornecida, `southamerica-east1-docker.pkg.dev/amigo-secreto-oculto/amigo-secreto-staging`, confirma o ID do projeto, região `southamerica-east1` e nome do repositório `amigo-secreto-staging`.
 
-**Próxima ação:** no Google Cloud Console, criar a conta de serviço `online-draw-staging-runtime` e conceder a ela o papel `Cloud Datastore User` (`roles/datastore.user`) no projeto de staging. Não criar chave JSON. Depois será criada separadamente a conta `github-staging-deployer`, com permissões limitadas, e configurado o WIF.
+**Próxima ação registrada naquela atualização:** criar a conta runtime e conceder `Cloud Datastore User`; o usuário informou que a criou após receber essas instruções. A atribuição do papel não foi inspecionada independentemente. Seguir com a conta de deploy.
 
 **Verificação:** os dados do repositório e a mudança para Blaze foram registrados a partir da confirmação do usuário. `git diff --check` passou sem erros. Nenhum comando Cloud, teste, alteração de IAM ou deploy foi executado pelo agente.
+
+## 51. Conta de serviço runtime criada pelo usuário — 2026-11-14
+
+O usuário informou que criou a conta `online-draw-staging-runtime` no projeto `amigo-secreto-oculto` após o passo a passo de criação e concessão do papel `Cloud Datastore User` (`roles/datastore.user`). Não foi enviada captura da lista de permissões; o papel consta como esperado, mas ainda não foi verificado visualmente. Nenhuma conta, papel ou chave foi alterada pelo agente.
+
+**Próxima ação:** criar `github-staging-deployer`. No assistente, conceder a essa conta no projeto os papéis `Cloud Run Admin`, `Firebase Hosting Admin`, `Firebase Rules Admin`, `API Keys Viewer` e `Service Usage Consumer`. Em etapas separadas, limitar `Artifact Registry Writer` ao repositório `amigo-secreto-staging` e `Service Account User` à conta `online-draw-staging-runtime`. Não criar chave JSON. Depois configurar WIF com as restrições de repositório e branch em `docs/DEPLOY.md`.
+
+**Verificação:** estado registrado conforme relato do usuário; `git diff --check` passou sem erros. Nenhum teste ou comando Cloud executado.
