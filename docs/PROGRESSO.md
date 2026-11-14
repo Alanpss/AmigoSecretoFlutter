@@ -24,7 +24,7 @@ As Fases 1 a 7 foram aceitas pelo usuário, com limitações de verificação re
 | 5 — Acabamento e backup | Aceita pelo usuário em 2026-11-05 | O usuário confirmou “tudo certo” e autorizou a próxima fase após abrir a versão release no Chrome. Testes automatizados, análise, formatação e build aprovados. A automação não validou Edge/leitor de tela/zoom manual | Nenhuma; limitações de verificação registradas |
 | 6 — Sorteio online e links individuais | Aceita pelo usuário em 2026-11-12 | Testes automatizados Emulator/Flutter passaram; usuário confirmou no Chrome grupos/restrições, repetição, invalidação de links antigos, token inválido e sorteio impossível | Nenhuma; deploy e projeto real seguem sem autorização |
 | 7 — Cópia e gestão de eventos online | Aceita pelo usuário em 2026-11-12 | Testes automatizados e validações manuais Chrome confirmadas pelo usuário, incluindo múltiplos eventos, cópias, saída, cancelamento e exclusão com invalidação de links | Nenhuma |
-| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore, Auth, APIs, billing Blaze e Artifact Registry confirmados pelo usuário; seção 51 registra conta runtime criada | Criar conta de deploy com permissões de projeto; depois escopos de Artifact Registry/conta runtime, IAM/WIF e Environment do GitHub |
+| 8 — Ambiente Docker, automação e experiência online | Autorizada em 2026-11-12; parcial/em andamento | Compose, builds, serviços e perfis de teste Flutter/API passaram localmente; login real validado no projeto `amigo-secreto-blacks`; projeto de staging `amigo-secreto-oculto`, app Web, Hosting, Firestore, Auth, APIs, billing Blaze, Artifact Registry e as duas contas de serviço confirmados pelo usuário; seções 41–52 | Conferir papéis do deployer e conceder Artifact Registry Writer ao repo e Service Account User somente à conta runtime; depois WIF e Environment do GitHub |
 
 ## 3. Ponto exato de retomada
 
@@ -207,7 +207,7 @@ Detalhes e justificativas: `docs/CONTEXTO.md`, `docs/ARQUITETURA.md` e `docs/dec
 
 ## 14. Próxima ação
 
-A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados, APIs necessárias habilitadas, plano Blaze e repositório Docker. O usuário informou que criou a identidade runtime `online-draw-staging-runtime`; verificar se o papel Cloud Datastore User foi aplicado. Próximo passo: criar a identidade de deploy `github-staging-deployer` com os papéis de projeto listados em `docs/DEPLOY.md`. Depois configurar permissões com escopo restrito e WIF. CI/deploy seguem pendentes; não executar workflow nem publicar sem revisão e autorização específica.
+A Fase 7 foi aceita e commitada em `b5b9b68`. A Fase 8 está autorizada e em andamento. A infraestrutura Docker foi commitada em `74d1938`; Compose, builds, serviços e testes conteinerizados passaram localmente. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google foi validado localmente, e o projeto separado de staging `amigo-secreto-oculto`, com app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado, domínios autorizados, APIs necessárias habilitadas, plano Blaze e repositório Docker. O usuário confirmou a criação de `online-draw-staging-runtime` e `github-staging-deployer`; a captura não mostra as permissões. Próximo passo: conferir os papéis de projeto do deployer e atribuir `Artifact Registry Writer` no repositório e `Service Account User` somente à conta runtime. Depois configurar WIF. CI/deploy seguem pendentes; não executar workflow nem publicar sem revisão e autorização específica.
 
 ## 15. Histórico
 
@@ -653,3 +653,13 @@ O usuário informou que criou a conta `online-draw-staging-runtime` no projeto `
 **Próxima ação:** criar `github-staging-deployer`. No assistente, conceder a essa conta no projeto os papéis `Cloud Run Admin`, `Firebase Hosting Admin`, `Firebase Rules Admin`, `API Keys Viewer` e `Service Usage Consumer`. Em etapas separadas, limitar `Artifact Registry Writer` ao repositório `amigo-secreto-staging` e `Service Account User` à conta `online-draw-staging-runtime`. Não criar chave JSON. Depois configurar WIF com as restrições de repositório e branch em `docs/DEPLOY.md`.
 
 **Verificação:** estado registrado conforme relato do usuário; `git diff --check` passou sem erros. Nenhum teste ou comando Cloud executado.
+
+**Próxima ação registrada naquela atualização:** criar o deployer e conceder os papéis de projeto. A captura da seção 52 confirma que as contas foram criadas, mas não exibe os papéis. Verificar os papéis e fazer as duas concessões com escopo restrito antes do WIF.
+
+## 52. Contas de serviço de staging criadas — 2026-11-14
+
+A captura enviada pelo usuário mostra `github-staging-deployer` e `online-draw-staging-runtime` como **Ativado** no projeto `amigo-secreto-oculto`. Ela confirma a criação das duas contas, mas não apresenta os papéis IAM atribuídos. As concessões indicadas durante a criação (cinco papéis de projeto no deployer e `Cloud Datastore User` no runtime) ainda precisam ser conferidas na tela de IAM.
+
+**Próxima ação:** conferir no IAM do projeto que `github-staging-deployer` tem `Cloud Run Admin`, `Firebase Hosting Admin`, `Firebase Rules Admin`, `API Keys Viewer` e `Service Usage Consumer`. Em seguida, conceder `Artifact Registry Writer` (`roles/artifactregistry.writer`) somente no repositório `amigo-secreto-staging` e `Service Account User` (`roles/iam.serviceAccountUser`) somente na conta `online-draw-staging-runtime`. Depois configurar o WIF conforme `docs/DEPLOY.md`. Nenhum papel foi alterado pelo agente.
+
+**Verificação:** captura revisada; estado das contas registrado e `git diff --check` passou sem erros. Nenhum teste, comando Cloud, alteração IAM ou deploy executado.
