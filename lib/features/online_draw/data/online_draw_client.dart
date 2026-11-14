@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
+import '../../participants/domain/phone_number.dart';
+
 class OnlineLink {
   const OnlineLink({
     required this.participantId,
@@ -70,7 +72,7 @@ class OnlineDrawClient {
             },
             body: jsonEncode({
               'pairingRevision': pairingRevision,
-              'participants': participants,
+              'participants': normalizeOnlineDrawParticipants(participants),
               'groups': groups,
             }),
           )
@@ -195,6 +197,39 @@ class OnlineDrawClient {
     }
     if (response.statusCode != 200) throw const OnlineDrawClientException();
   }
+}
+
+/// Converts optional phone inputs to the E.164 value expected by the API.
+///
+/// The organizer may enter common display punctuation (spaces, parentheses,
+/// or hyphens); those characters are normalized before the request is sent.
+List<Map<String, Object?>> normalizeOnlineDrawParticipants(
+  List<Map<String, Object?>> participants,
+) => [
+  for (final participant in participants)
+    _normalizeOnlineDrawParticipant(participant),
+];
+
+Map<String, Object?> _normalizeOnlineDrawParticipant(
+  Map<String, Object?> participant,
+) {
+  final normalized = Map<String, Object?>.of(participant);
+  final phoneValue = normalized['recipientPhoneE164'];
+  if (phoneValue == null) return normalized;
+  if (phoneValue is! String) throw const OnlineDrawInvalidDataException();
+
+  final parsed = parsePhoneNumber(phoneValue);
+  if (!parsed.isValid || parsed.e164 == null) {
+    throw const OnlineDrawInvalidDataException();
+  }
+
+  final phoneE164 = parsed.e164!;
+  if (phoneE164.isEmpty) {
+    normalized.remove('recipientPhoneE164');
+  } else {
+    normalized['recipientPhoneE164'] = phoneE164;
+  }
+  return normalized;
 }
 
 class OnlineDrawClientException implements Exception {

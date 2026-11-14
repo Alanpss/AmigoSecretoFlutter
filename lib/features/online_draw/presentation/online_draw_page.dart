@@ -628,7 +628,9 @@ class _OnlineDrawPageState extends ConsumerState<OnlineDrawPage> {
         setState(() {
           _error =
               'O serviço rejeitou os dados do sorteio. Confira se há '
-              'pelo menos duas pessoas ativas, nomes e destinatários válidos.';
+              'pelo menos duas pessoas ativas e nomes e destinatários '
+              'preenchidos. Telefones com DDD e código do país são aceitos '
+              'com espaços ou hífens.';
         });
       }
     } on OnlineDrawServerException {

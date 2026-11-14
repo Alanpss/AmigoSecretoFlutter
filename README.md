@@ -2,7 +2,7 @@
 
 Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participantes e grupos e realizar sorteios que respeitam todas as restrições configuradas.
 
-> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O login Google real foi validado localmente no projeto `amigo-secreto-blacks`. O projeto separado `amigo-secreto-oculto`, destinado a staging, já tem app Web, Hosting, Firestore em `southamerica-east1`, provedor Google ativado e domínios autorizados. O fluxo de login nesse staging, API Cloud Run, fluxo online completo e publicação ainda precisam ser validados. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para detalhes.
+> **Estado:** Fases 1–7 aceitas pelo usuário; Fase 8 (Docker e automação de publicação) em implementação. O login Google real foi validado localmente no projeto `amigo-secreto-blacks`. O projeto separado `amigo-secreto-oculto` está publicado em staging no Firebase Hosting, com API no Cloud Run e regras do Firestore. Ainda falta validar manualmente o login e o fluxo online completo nesse domínio. Consulte [`docs/PROGRESSO.md`](docs/PROGRESSO.md) para o estado atual.
 
 ## Descrição para o GitHub
 
@@ -10,14 +10,14 @@ Aplicativo Flutter para organizar eventos de amigo secreto, gerenciar participan
 
 ## Sobre o projeto
 
-O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil. O modo local não usa backend. O modo online foi validado localmente com Firebase Emulator; o projeto Firebase real foi criado, mas a integração e a publicação ainda estão em preparação.
+O AmigoSecretoFlutter é um projeto de portfólio e estudo de desenvolvimento de aplicativos com Flutter. A experiência é voltada a um organizador, em português do Brasil. O modo local não usa backend. O modo online foi validado com Firebase Emulator e publicado em um ambiente real de staging; o uso completo nesse domínio ainda depende de validação manual.
 
 O projeto dá atenção especial à integridade do sorteio: restrições de grupos não são removidas silenciosamente, os resultados são persistidos antes de qualquer etapa de envio e ficam ocultos até a revelação individual.
 
 ### Implementado
 
 - Aplicativo Web responsivo, com interface em português do Brasil.
-- Modo de evento online com sorteio no servidor e links individuais, validado localmente com Firebase Emulator; ainda não publicado.
+- Modo de evento online com sorteio no servidor e links individuais, validado localmente com Firebase Emulator e publicado em staging.
 - Cópia e gerenciamento de eventos online independentes, com logout, exclusão confirmada que invalida os links do evento e cópia entre modos sem transferir resultados (Fase 7 aceita).
 - Cadastro de eventos, pessoas, participantes, responsáveis e grupos.
 - Busca, filtros e revisão das condições do evento.
@@ -173,7 +173,7 @@ O workflow `.github/workflows/verify.yml` repete build/testes em PR e push para 
 
 No formulário online, os grupos são configurados separadamente dos eventos locais: escolha o tipo, marque os participantes e indique se a restrição está ativa. Após um sorteio, “Refazer sorteio e invalidar links atuais” pede confirmação e gera uma nova revisão; os links antigos deixam de funcionar. O organizador precisa entrar para gerenciar o evento, mas participantes abrem seus links sem login.
 
-Os dados e IDs acima são fictícios. O build Docker local sempre usa emuladores. Para autenticação Google real e publicação em staging, siga [`docs/DEPLOY.md`](docs/DEPLOY.md). Nunca use dados reais nos emuladores nem commite tokens ou chaves privadas. O projeto Firebase `amigo-secreto-blacks` já existe; o app ainda não foi publicado e nenhum deploy foi feito.
+Os dados e IDs acima são fictícios. O build Docker local sempre usa emuladores. Para autenticação Google real e staging, siga [`docs/DEPLOY.md`](docs/DEPLOY.md). Nunca use dados reais nos emuladores nem commite tokens ou chaves privadas. O ambiente público de staging não é produção; a publicação de produção não está autorizada.
 
 ## Desenvolvimento assistido por IA
 
@@ -194,7 +194,7 @@ O aplicativo **não usa IA durante a execução**. Ferramentas de IA são usadas
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Camadas, dados, algoritmos e fluxos |
 | [`docs/PLANO_IMPLEMENTACAO.md`](docs/PLANO_IMPLEMENTACAO.md) | Fases, escopo e portões de aceite |
 | [`docs/PROGRESSO.md`](docs/PROGRESSO.md) | Estado real, verificações e próximo passo |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Preparação do artefato Web e requisitos de hospedagem estática; não publicado |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Configuração do Firebase/Cloud Run, deploy de staging, smoke checks e reversão |
 | [`docs/AMBIENTE.md`](docs/AMBIENTE.md) | Ferramentas e configuração de desenvolvimento |
 | [`docs/TESTES.md`](docs/TESTES.md) | Estratégia, cenários e comandos |
 | [`docs/decisions/`](docs/decisions/) | Registros das decisões arquiteturais (ADRs) |
