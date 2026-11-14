@@ -761,7 +761,7 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 
 ## 11. Fase 8 — Ambiente Docker e automação de publicação
 
-**Situação:** autorizada pelo usuário em 2026-11-12 após o commit da Fase 7 (`b5b9b68`). Compose, imagens, CI e workflow manual de staging foram preparados. Validação conteinerizada local executada em 2026-11-13; falta conferir o fluxo visual no Chrome e validar o workflow de CI em execução. Staging continua separado e sem execução.
+**Situação:** autorizada pelo usuário em 2026-11-12 após o commit da Fase 7 (`b5b9b68`). Compose, imagens, CI e workflow manual de staging foram preparados. Validação conteinerizada local e CI foram executados; deploy autorizado de staging concluiu em 2026-11-14. Ainda faltam validações manuais no Chrome do fluxo visual local e do login/fluxo online no domínio de staging.
 
 **Objetivo:** tornar o ambiente reproduzível com Docker para desenvolvimento/teste e preparar a compilação e publicação dos artefatos Flutter Web e API Dart nos serviços gerenciados Firebase Hosting e Cloud Run.
 
@@ -795,8 +795,8 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 - [ ] O build Flutter usa configuração Firebase não secreta injetada por ambiente no momento de build; nenhum segredo ou dado pessoal é embutido em `build/web`.
 - [ ] O build genérico não aponta para o projeto demo nem liga emuladores por padrão; a configuração Firebase ausente ou inválida bloqueia o login com explicação, e erros Google comuns indicam como corrigir domínio, provedor, popup ou rede.
 - [x] Configuração Firebase Hosting aponta para `build/web`, mantém fallback SPA e o workflow publica Hosting e regras Firestore apenas no projeto de staging configurado.
-- [ ] Pipeline executa format/análise/testes/build e publica preview/staging somente no ambiente configurado, com produção bloqueada até aprovação explícita.
-- [ ] Identidade de execução Cloud Run usa privilégios mínimos; não existe chave privada de conta de serviço em arquivo/imagem.
+- [x] CI executou format/análise/testes/build; o workflow de deploy manual publicou somente no staging configurado após confirmação explícita `yes`. Não há fluxo de publicação de produção autorizado/configurado.
+- [x] Identidade de execução Cloud Run usa a conta dedicada com `roles/datastore.user`; deploy usa Workload Identity Federation e não há chave privada de conta de serviço em arquivo/imagem, conforme configuração e revisão IAM registradas em `docs/DEPLOY.md` e `docs/PROGRESSO.md`.
 - [x] `.gitignore`/`.dockerignore` excluem `.env`, credenciais, banco local, backups e artefatos locais.
 - [x] Documentação contém setup inicial, comandos locais, secrets/configuração, deploy, smoke test e reversão.
 - [x] `flutter analyze`, `flutter test`, `dart analyze`, `dart test`, build Web e build/execução de contêiner aplicáveis passaram localmente; os testes Dart passaram com o Firestore Emulator real.
@@ -804,9 +804,9 @@ Automatizar a transformação e persistência de múltiplos rascunhos com bancos
 - [ ] O fluxo de criação online separa dados do evento, participantes, grupos e revisão/links em abas/etapas acessíveis e responsivas, com orientação de progresso; os controles não ficam acumulados em uma única página.
 - [ ] Telas de lista e edição online usam hierarquia visual e componentes do tema do app, com estados claros para rascunho, login, salvamento e sorteio.
 
-**Verificação e portão:** revisão local e CI com Docker e emuladores primeiro; login real e staging só depois de criar/configurar o projeto e seus domínios. Produção, custos e abertura pública exigem autorização explícita separada.
+**Verificação e portão:** revisão local, CI com Docker/emuladores e deploy de staging foram executados. A Fase 8 permanece parcial até completar a validação manual do fluxo local e real no Chrome. Produção exige autorização explícita separada.
 
-**Estado da implementação (atualizado em 2026-11-14):** Compose validado e stack executado localmente; os perfis de teste Flutter e API passaram antes desta extensão. O fluxo por quatro áreas e o tema/lista online foram implementados, `flutter analyze` e build Web release em Docker passaram, e os serviços responderam. O usuário criou o projeto Firebase `amigo-secreto-blacks`, onde Google está ativado, os domínios principais estão autorizados e o login real foi confirmado localmente no Chrome. Para staging, criou o projeto separado `amigo-secreto-oculto`, o app Web, os sites Hosting e o Firestore Native Standard em `southamerica-east1`; capturas confirmam Google ativado e domínios autorizados, mas o fluxo de login no app desse projeto ainda não foi testado. O fluxo completo de eventos online, a execução do CI no GitHub e Cloud Run/IAM/WIF ainda não foram validados; nenhum deploy foi feito. A fase permanece parcial.
+**Estado da implementação (atualizado em 2026-11-14):** Compose validado e stack executado localmente; perfis de teste Flutter/API e CI com emuladores passaram. O fluxo por quatro áreas e o tema/lista online foram implementados; `flutter analyze` e build Web release em Docker passaram. O usuário confirmou login real local no projeto Firebase `amigo-secreto-blacks`. O projeto separado `amigo-secreto-oculto` tem app Web, Hosting, Firestore Native Standard em `southamerica-east1`, Google ativado e domínios autorizados. O workflow manual #2 publicou API Cloud Run, Web Hosting e regras Firestore; smoke check da API passou. Ainda não houve validação manual no Chrome do fluxo visual local nem do login Google e do fluxo completo de evento no domínio de staging. A fase permanece parcial.
 
 ---
 
