@@ -23,8 +23,9 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 4 | WhatsApp e acompanhamento | Mensagens, links, fila e estados de envio | Fase 3 aceita; autorização do usuário em 2026-11-03 | Liberada para transição; link aberto com dado fictício, mas emojis apareceram como caractere de substituição após redirecionamento |
 | 5 | Acabamento e recuperação | Backup, acessibilidade, responsividade, regressão e build final | Fase 4; transição autorizada pelo usuário em 2026-11-03 | Aceita pelo usuário em 2026-11-05; automação não validou Edge/leitor de tela/zoom |
 | 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Aceita pelo usuário em 2026-11-12 |
-| 7 | Cópia e gestão de eventos online | Conversão local ↔ online e vários eventos online independentes, persistidos e reabríveis | Fase 6 aceita; autorização “pode iniciar a próxima fase” em 2026-11-12; ampliação pedida em 2026-11-12 | Autorizada; em andamento |
-| 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita e commitada; autorização do usuário em 2026-11-12 | Em andamento |
+| 7 | Cópia e gestão de eventos online | Conversão local ↔ online e vários eventos online independentes, persistidos e reabríveis | Fase 6 aceita; autorização “pode iniciar a próxima fase” em 2026-11-12; ampliação pedida em 2026-11-12 | Aceita pelo usuário em 2026-11-12 |
+| 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita e commitada; autorização do usuário em 2026-11-12 | Parcial; aguardando validação manual no Chrome |
+| 9 | Experiência online alinhada ao fluxo local | Visão geral do evento online, cadastro compacto com relações rápidas, destinatário próprio por padrão e página de resultado mais clara | Fase 8 aceita e autorização explícita do usuário | Proposta; não autorizada |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -842,3 +843,41 @@ Uma fase só é considerada concluída quando:
 | Limite de participantes para aceite | Antes da Fase 3 | 200 ativos |
 | Exclusão definitiva ou arquivamento | Antes da Fase 2 | Exclusão com confirmação |
 | Backup sem senha | Antes da Fase 5 | Aceitável no MVP, com aviso |
+
+## 15. Fase 9 — Experiência online alinhada ao fluxo local (proposta)
+
+**Situação:** proposta solicitada em 2026-11-16; **não autorizada para implementação**. Só poderá começar depois do aceite da Fase 8 e de autorização explícita do usuário.
+
+**Objetivo:** manter os modos local e online disponíveis e separados, levando para o online os padrões de cadastro rápido e organização que funcionam melhor no evento local. Reduzir rolagem e edição repetitiva, deixar claro quem participa e quem recebe o link, e tornar a página individual de resultado mais compreensível.
+
+**Pontos levantados pelo usuário:**
+
+- Não consegue criar um evento local a partir do caminho online; investigar se é uma falha ou expectativa de navegação entre modos.
+- Prefere a tela local, onde pode criar participante, escolher/criar responsável e criar grupo sem descartar o formulário.
+- No online, o destinatário do link hoje é preenchido separadamente; a maioria dos participantes deve usar seu próprio telefone, com responsável como opção excepcional.
+- A tela online de participantes cresce muito e exige editar os cartões um a um; falta uma visão geral mais útil.
+- O link individual revela o resultado em uma página básica, que pode deixar dúvidas para quem o abre.
+
+**Escopo proposto:**
+
+1. Reproduzir o caminho que falha para criar evento local e deixar explícita a escolha entre “Evento local” e “Evento online”. Manter ambos os modos; não converter, migrar ou misturar dados automaticamente.
+2. Criar uma visão geral dentro do evento online no padrão da visão local: situação (rascunho/sorteado), participantes ativos e inativos, contatos próprios e alternativos, grupos/restrições e pendências, com atalhos para as áreas correspondentes. Nunca mostrar pares na área do organizador.
+3. Trocar a pilha de cartões altos por uma lista compacta com busca, filtros e resumo por pessoa. Em tela larga, avaliar edição em linha ou painel lateral; em celular, usar cartões recolhíveis/detalhe sob demanda. Preservar salvar automático e indicar o estado do rascunho.
+4. Permitir operações em lote seguras para participantes selecionados, como ativar/desativar ou associar/remover pessoas de um grupo, com resumo e confirmação. Nome e telefone permanecem editáveis por participante para evitar aplicar contato incorreto em massa. Alterações continuam bloqueadas após sorteio até a invalidação explícita existente.
+5. No cadastro online, usar por padrão o próprio participante como destinatário do link e seu próprio telefone. Uma escolha explícita “Outra pessoa receberá o link” revela a seleção/criação rápida de responsável/contato e seu telefone. Não criar cadeia de responsáveis; o resultado continua pertencendo ao participante. Se não houver contato válido, permitir prosseguir para entrega manual com indicação clara.
+6. Reproduzir no online os fluxos rápidos da tela de referência: selecionar pessoa cadastrada, criar contato responsável e criar/selecionar grupo sem sair do cadastro nem perder campos digitados. Na área de grupos, tornar a seleção de membros direta e permitir voltar à inclusão de participantes com o estado preservado.
+7. Redesenhar a revelação individual com hierarquia clara: estado de carregamento, identificação de que a mensagem é o resultado pessoal, destaque para a pessoa sorteada e orientação curta para guardar o link. Para link inválido/revogado, explicar o que houve e pedir outro link ao organizador. A prévia de compartilhamento nunca deve expor o resultado.
+8. Aplicar os componentes e a identidade visual Material 3 já existentes, com layout responsivo, foco visível, rótulos semânticos, contraste, escala de texto e áreas de toque de pelo menos 48×48. Antes de implementar, preparar esboços das telas de visão geral, lista/cadastro e revelação para validar a hierarquia.
+
+**Critérios de aceite propostos:**
+
+- O caminho para criar um evento local é reproduzível e compreensível; local continua independente e disponível ao lado do online.
+- Em um evento online novo, um participante sem responsável usa o próprio nome e telefone como destinatário por padrão; marcar responsável muda somente o destinatário, não o participante do sorteio.
+- É possível criar um participante e, no mesmo fluxo, selecionar/criar contato e criar/atribuir grupo sem perder os campos preenchidos.
+- Uma lista de 200 participantes continua navegável; filtros, detalhe individual e operações em lote funcionam sem atualizar pessoas erradas.
+- A visão geral apresenta contagens e pendências coerentes com as telas e oferece navegação direta; não exibe pares.
+- Link válido mostra somente um resultado; links inválidos/revogados não mostram dados; a tela funciona em celular e computador.
+- Testes cobrem padrões de destinatário, responsável opcional, vínculos rápidos, operações em lote, estados da visão geral e estados da revelação, além da regressão do sorteio e das restrições.
+- `dart format`, `flutter analyze`, testes Flutter e fluxo no Emulator passam; a verificação visual é feita em Chrome móvel e desktop com dados fictícios. Nenhuma mensagem real é enviada.
+
+**Limites:** não remover o modo local; não adicionar contatos ou grupos online a um cadastro compartilhado sem avaliar a privacidade e o escopo de cópia já definido; não alterar a regra de links bearer nem expor resultados ao organizador; não mudar a experiência do WhatsApp; não publicar em staging ou produção sem autorização correspondente.
