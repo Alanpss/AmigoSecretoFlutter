@@ -25,7 +25,7 @@ Este documento é a fonte de verdade para a **sequência de implementação**, o
 | 6 | Sorteio online com links individuais | Eventos online, serviço Dart/Cloud Run, Firestore, login Google, links individuais e envio manual pelo WhatsApp | Fase 5 aceita pelo usuário; autorização em 2026-11-05 | Aceita pelo usuário em 2026-11-12 |
 | 7 | Cópia e gestão de eventos online | Conversão local ↔ online e vários eventos online independentes, persistidos e reabríveis | Fase 6 aceita; autorização “pode iniciar a próxima fase” em 2026-11-12; ampliação pedida em 2026-11-12 | Aceita pelo usuário em 2026-11-12 |
 | 8 | Ambiente Docker e automação de publicação | Compose local para Web/API/Emulators e pipeline preparado para Firebase Hosting e Cloud Run | Fase 7 aceita e commitada; autorização do usuário em 2026-11-12 | Parcial; aguardando validação manual no Chrome |
-| 9 | Experiência online alinhada ao fluxo local | Visão geral do evento online, cadastro compacto com relações rápidas, destinatário próprio por padrão e página de resultado mais clara | Fase 8 aceita e autorização explícita do usuário | Proposta; não autorizada |
+| 9 | Experiência online alinhada ao fluxo local | Visão geral do evento online, cadastro compacto com relações rápidas, destinatário próprio por padrão e página de resultado mais clara | Fase 8 aceita e autorização explícita do usuário | Autorizada pelo usuário em 2026-11-16; bloqueada até o aceite da Fase 8 |
 
 ## 3. Fase 0 — Planejamento (concluída)
 
@@ -846,7 +846,7 @@ Uma fase só é considerada concluída quando:
 
 ## 15. Fase 9 — Experiência online alinhada ao fluxo local (proposta)
 
-**Situação:** proposta solicitada em 2026-11-16; **não autorizada para implementação**. Só poderá começar depois do aceite da Fase 8 e de autorização explícita do usuário.
+**Situação:** escopo autorizado pelo usuário em 2026-11-16; implementação bloqueada até o aceite da Fase 8, conforme o portão de fases deste repositório.
 
 **Objetivo:** manter os modos local e online disponíveis e separados, levando para o online os padrões de cadastro rápido e organização que funcionam melhor no evento local. Reduzir rolagem e edição repetitiva, deixar claro quem participa e quem recebe o link, e tornar a página individual de resultado mais compreensível.
 
